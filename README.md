@@ -25,4 +25,4 @@ Phone and PC must be on the same Wi-Fi network; otherwise use `npx expo start --
 
 Add packages with `npx expo install <package>` so versions match the Expo SDK.
 
-Requires Node.js 22.13+ (installed: Node 26 LTS).
+Requires Node.js 22.13+ (installed: Node 24 LTS).
