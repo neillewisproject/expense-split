@@ -1,0 +1,203 @@
+# React Native Learning Roadmap: Expense Split
+
+You learn by building one real app, an **expense tracker with group bill splitting** (like Splitwise).
+Each milestone adds a feature and teaches the industry-standard tool for that job.
+
+> You already know React. Components, hooks, props and state work the same way.
+> What's new is the **platform**: native primitives, navigation, gestures, device APIs, storage, and shipping to app stores.
+
+---
+
+## The stack (and why)
+
+| Concern            | Choice                                               | Why it's the standard                                                           |
+| ------------------ | ---------------------------------------------------- | ------------------------------------------------------------------------------- |
+| Framework          | **Expo** (SDK 58, React Native 0.88, New Arch)       | Officially recommended by the React Native team; no Xcode/Android Studio needed |
+| Language           | **TypeScript** (strict)                              | Default in almost every production RN codebase                                  |
+| Navigation         | **Expo Router**                                      | File-based routing (like Next.js) on top of React Navigation, deep links free   |
+| Client state       | **Zustand**                                          | Tiny, hook-based, no boilerplate                                                |
+| Local database     | **expo-sqlite** + **Drizzle ORM**                    | Real offline-first storage that works in Expo Go                                |
+| Server state       | **TanStack Query**                                   | Caching, retries and background refetch, same as on the web                     |
+| Backend            | **Supabase** (Postgres + Auth + Realtime)            | Shared groups need a server; easy auth and row-level security                   |
+| Forms & validation | **react-hook-form** + **zod**                        | Performant forms with schema validation shared across the app                   |
+| Lists              | `FlatList` → **FlashList**                           | Virtualized lists; FlashList for large or fast lists                            |
+| Animation/gestures | **Reanimated** + **Gesture Handler**                 | Run on the UI thread at 60/120fps (already installed)                           |
+| Testing            | **Jest** + **React Native Testing Library**, Maestro | Unit/component tests now; Maestro for end-to-end flows                          |
+| Code quality       | ESLint (`expo lint`) + Prettier + `tsc`              | `npm run check` runs all of them                                                |
+| Build & ship       | **EAS Build / Submit / Update**                      | Cloud builds, store submission, over-the-air JS updates                         |
+
+---
+
+## How the project is organised
+
+```
+src/
+  app/                 # ROUTES ONLY. Every file is a screen (Expo Router).
+    _layout.tsx        #   root layout: theme + tab navigator
+    index.tsx          #   "/"        -> Expenses tab
+    groups.tsx         #   "/groups"  -> Groups tab
+  components/          # shared, dumb UI (ThemedText, EmptyState, ...)
+  features/            # feature modules: domain logic, stores, feature UI
+    expenses/
+      domain/          #   pure TypeScript: money, splitting, balances (+ tests)
+    groups/
+  constants/theme.ts   # colors, spacing, fonts
+  hooks/               # shared hooks
+```
+
+Rules worth following from day one:
+
+1. **Keep screens thin.** `src/app/*` files compose components and call hooks. Logic lives in `features/`.
+2. **Keep domain logic pure.** `features/*/domain` has no React or React Native imports, so it's trivially testable.
+3. **Money is an integer of minor units** (paise). See `money.ts`. Never use floats for money.
+4. **Install packages with `npx expo install <pkg>`**, never plain `npm install`, so versions match the SDK.
+
+---
+
+## Daily commands
+
+```bash
+npm start            # start Metro; scan the QR code with the Expo Go app on your phone
+npm test             # run unit/component tests  (npm run test:watch while coding)
+npm run check        # typecheck + lint + format check + tests (run before every commit)
+npm run format       # auto-format everything
+npm run doctor       # diagnose dependency/config problems
+```
+
+Phone and computer must be on the **same Wi-Fi**. If they can't connect, use `npx expo start --tunnel`.
+
+---
+
+## Milestone 0: Orientation (2–3 days)
+
+**Goal:** understand what's different from React on the web.
+
+Learn:
+
+- Core components: `View`, `Text`, `Image`, `Pressable`, `ScrollView`, `TextInput`. There's no `div`, and **all text must be inside `<Text>`**.
+- Styling: `StyleSheet.create`, no CSS cascade, **flexbox defaults to `flexDirection: 'column'`**, unitless numbers (density-independent pixels).
+- Safe areas (notches, home indicator): `react-native-safe-area-context`.
+- Platform differences: `Platform.OS`, `.ios.tsx` / `.android.tsx` / `.web.tsx` file extensions (this template already uses `.web.tsx`).
+- Dev tools: shake the phone (or press `m` in the terminal) for the dev menu; press `j` to open the React Native DevTools debugger.
+
+Build:
+
+- [ ] Run the app on your phone with Expo Go.
+- [ ] Change the "Spent this month" card styles; see Fast Refresh work.
+- [ ] Read `src/app/_layout.tsx` and `src/components/app-tabs.tsx` to see how tabs are wired.
+- [ ] Read `src/features/expenses/domain/*` and its tests.
+
+Docs: [Core components](https://reactnative.dev/docs/components-and-apis) · [Flexbox](https://reactnative.dev/docs/flexbox) · [Expo tutorial](https://docs.expo.dev/tutorial/introduction/)
+
+---
+
+## Milestone 1: Personal expense tracker (1–2 weeks)
+
+**Goal:** add, list, edit and delete your own expenses. In-memory first, then persisted.
+
+Learn:
+
+- **Expo Router stacks & modals:** `src/app/expenses/[id].tsx`, `src/app/add-expense.tsx` presented as a modal, `Link`, `router.push`, `useLocalSearchParams`, typed routes.
+- **Lists:** `FlatList` (`keyExtractor`, `ItemSeparatorComponent`, `ListEmptyComponent`). Why `.map()` inside a `ScrollView` doesn't scale.
+- **Forms on mobile:** `TextInput` (`keyboardType="decimal-pad"`), `KeyboardAvoidingView`, dismissing the keyboard, react-hook-form + zod. Use `parseAmount()` from `money.ts`.
+- **State:** a Zustand store in `features/expenses/store.ts`.
+- **Persistence:** `expo-sqlite` + Drizzle (schema, migrations), then load the store from the DB.
+
+Build:
+
+- [ ] Add-expense modal: amount, description, category, date.
+- [ ] Expenses list grouped by day, with the monthly total in the summary card.
+- [ ] Swipe-to-delete (Gesture Handler `Swipeable`) and tap-to-edit.
+- [ ] Data survives app restarts (SQLite).
+- [ ] Component tests: the add form validates input; the list renders items.
+
+---
+
+## Milestone 2: Groups & splitting (1–2 weeks)
+
+**Goal:** the core Splitwise logic, still local-only.
+
+Learn:
+
+- Nested navigation: Groups tab → group detail stack → add group expense.
+- Modelling relations in SQLite (groups, members, expenses, splits).
+- Derived state with `useMemo` and selectors; keeping domain logic outside components.
+
+Build:
+
+- [ ] Create a group, add members by name.
+- [ ] Add a group expense: who paid, split equally (`splitEqually`) or by shares (`splitByShares`).
+- [ ] Group balances screen using `computeBalances`.
+- [ ] **Exercise:** implement `simplifyDebts(balances)` in `balances.ts` (greedy: match biggest creditor with biggest debtor). Make the `it.todo` tests in `domain.test.ts` real tests first (TDD).
+- [ ] "Settle up" records a payment as a special expense.
+
+---
+
+## Milestone 3: Polish & native feel (1 week)
+
+Learn:
+
+- **Reanimated** layout animations (`entering`, `exiting`, `LinearTransition`), gestures.
+- **Haptics** (`expo-haptics`), **images** (`expo-image`), **icons** (`expo-symbols` / SF Symbols, Material Symbols).
+- Dark mode (the theme already supports it), accessibility (`accessibilityLabel`, `accessibilityRole`, dynamic font sizes).
+- **FlashList** for long lists; profiling with React Native DevTools.
+
+Build:
+
+- [ ] Animated list insert/delete; haptic feedback on save.
+- [ ] Charts for spending by category (e.g. `victory-native` or `react-native-gifted-charts`).
+- [ ] Attach a receipt photo (`expo-image-picker`), shown with `expo-image`.
+- [ ] Pass an accessibility check with the screen reader (TalkBack/VoiceOver).
+
+---
+
+## Milestone 4: Backend, auth & sync (2–3 weeks)
+
+**Goal:** real shared groups between real users.
+
+Learn:
+
+- **Supabase:** Postgres tables, Row Level Security, Auth (email OTP, Google/Apple sign-in).
+- **Secure storage** for tokens: `expo-secure-store`.
+- **TanStack Query** for server state; optimistic updates; offline queueing.
+- **Protected routes** in Expo Router (auth group `(auth)` vs `(app)`), **deep links** for group invites (`expensesplit://join/<code>`).
+- Environment variables: `EXPO_PUBLIC_*` and `.env` (never commit secrets).
+
+Build:
+
+- [ ] Sign in / sign out.
+- [ ] Groups and expenses sync to Supabase; invite friends with a link.
+- [ ] Realtime updates when someone adds an expense.
+
+---
+
+## Milestone 5: Production & shipping (1–2 weeks)
+
+Learn:
+
+- **Development builds** (`eas build --profile development`): needed once you add native modules that aren't in Expo Go.
+- **EAS Build / Submit:** Play Store internal testing, TestFlight.
+- **EAS Update:** ship JS fixes over the air.
+- **Push notifications** (`expo-notifications`): "Asha added ₹1,200 for Dinner".
+- **Crash reporting** (Sentry), analytics.
+- **E2E tests** with Maestro; **CI** with GitHub Actions running `npm run check` on every push.
+
+Build:
+
+- [ ] App icon and splash screen.
+- [ ] Internal test release on Android (and iOS via TestFlight if you have an Apple developer account).
+- [ ] CI pipeline + one Maestro flow: "add expense → appears in list".
+
+---
+
+## Stretch ideas
+
+Multiple currencies with exchange rates · recurring expenses · CSV export (`expo-sharing`) · home-screen widget · biometric lock (`expo-local-authentication`) · localisation (`expo-localization`).
+
+## Resources
+
+- Expo docs (versioned for SDK 58): <https://docs.expo.dev/versions/v58.0.0/>
+- Expo Router: <https://docs.expo.dev/router/introduction/>
+- React Native docs: <https://reactnative.dev/docs/getting-started>
+- React Native Testing Library: <https://callstack.github.io/react-native-testing-library/>
+- Supabase + Expo: <https://supabase.com/docs/guides/getting-started/quickstarts/expo-react-native>
