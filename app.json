@@ -40,7 +40,8 @@
           "photosPermission": "Allow Expense Split to attach receipt photos to expenses.",
           "microphonePermission": false
         }
-      ]
+      ],
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true,

@@ -15,10 +15,12 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useGroupsStore } from '@/features/groups/store';
+import { useAuth } from '@/features/auth/auth-provider';
 import { useTheme } from '@/hooks/use-theme';
 
 export default function CreateGroupScreen() {
   const theme = useTheme();
+  const { user } = useAuth();
   const createGroup = useGroupsStore((state) => state.createGroup);
   const [name, setName] = useState('');
   const [yourName, setYourName] = useState('');
@@ -31,7 +33,7 @@ export default function CreateGroupScreen() {
     setIsSaving(true);
     try {
       const memberNames = [yourName, ...otherMembers.split(/[\n,]/)];
-      const groupId = await createGroup(name, memberNames);
+      const groupId = await createGroup(name, memberNames, user?.id);
       router.replace({ pathname: '/groups/[id]', params: { id: groupId } });
     } catch (createError) {
       setError(createError instanceof Error ? createError.message : 'Could not create this group.');

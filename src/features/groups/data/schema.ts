@@ -6,6 +6,12 @@ export const groups = sqliteTable('groups', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),
   createdAt: text('created_at').notNull(),
+  syncUserId: text('sync_user_id'),
+  syncStatus: text('sync_status')
+    .$type<'local' | 'pending' | 'synced'>()
+    .notNull()
+    .default('local'),
+  inviteCode: text('invite_code'),
 });
 
 export const groupMembers = sqliteTable(

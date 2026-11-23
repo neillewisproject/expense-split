@@ -10,6 +10,7 @@ import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { computeBalances, simplifyDebts } from '@/features/expenses/domain/balances';
 import { formatMoney } from '@/features/expenses/domain/money';
 import { useGroupsStore } from '@/features/groups/store';
+import { useAuth } from '@/features/auth/auth-provider';
 import { triggerSuccessHaptic } from '@/lib/success-haptics';
 
 function getTodayDate(): string {
@@ -19,6 +20,7 @@ function getTodayDate(): string {
 
 export default function SettleUpScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { user } = useAuth();
   const group = useGroupsStore((state) => state.groups.find((item) => item.id === id));
   const status = useGroupsStore((state) => state.status);
   const loadGroups = useGroupsStore((state) => state.loadGroups);
@@ -26,8 +28,8 @@ export default function SettleUpScreen() {
   const [savingSettlement, setSavingSettlement] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!group && status === 'idle') void loadGroups();
-  }, [group, loadGroups, status]);
+    if (!group && status === 'idle') void loadGroups(user?.id);
+  }, [group, loadGroups, status, user?.id]);
 
   if (!group) {
     return (

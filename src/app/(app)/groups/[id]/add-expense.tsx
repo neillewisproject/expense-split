@@ -17,6 +17,7 @@ import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { parseAmount } from '@/features/expenses/domain/money';
 import { splitByShares, splitEqually } from '@/features/expenses/domain/split';
 import { useGroupsStore } from '@/features/groups/store';
+import { useAuth } from '@/features/auth/auth-provider';
 import { useTheme } from '@/hooks/use-theme';
 import { triggerSuccessHaptic } from '@/lib/success-haptics';
 
@@ -30,6 +31,7 @@ function getTodayDate(): string {
 export default function AddGroupExpenseScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const theme = useTheme();
+  const { user } = useAuth();
   const group = useGroupsStore((state) => state.groups.find((item) => item.id === id));
   const status = useGroupsStore((state) => state.status);
   const loadGroups = useGroupsStore((state) => state.loadGroups);
@@ -44,8 +46,8 @@ export default function AddGroupExpenseScreen() {
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    if (!group && status === 'idle') void loadGroups();
-  }, [group, loadGroups, status]);
+    if (!group && status === 'idle') void loadGroups(user?.id);
+  }, [group, loadGroups, status, user?.id]);
 
   const inputStyle = [styles.input, { color: theme.text, borderColor: theme.backgroundSelected }];
 

@@ -3,12 +3,33 @@ import type { PropsWithChildren } from 'react';
 
 import RootLayout from '@/app/_layout';
 
+jest.mock('@react-native-async-storage/async-storage', () => ({
+  __esModule: true,
+  default: {
+    getItem: jest.fn(),
+    setItem: jest.fn(),
+    removeItem: jest.fn(),
+  },
+}));
+
+jest.mock('expo-secure-store', () => ({
+  getItemAsync: jest.fn(),
+  setItemAsync: jest.fn(),
+  deleteItemAsync: jest.fn(),
+}));
+
 jest.mock('@/components/animated-icon', () => ({
   AnimatedSplashOverlay: () => null,
 }));
 
 jest.mock('expo-splash-screen', () => ({
   preventAutoHideAsync: jest.fn(),
+  hideAsync: jest.fn(),
+}));
+
+jest.mock('expo-network', () => ({
+  addNetworkStateListener: jest.fn(() => ({ remove: jest.fn() })),
+  useNetworkState: jest.fn(() => ({ isConnected: true, isInternetReachable: true })),
 }));
 
 jest.mock('expo-router', () => {

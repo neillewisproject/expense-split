@@ -168,7 +168,7 @@ Build:
 
 Learn:
 
-- **Supabase:** Postgres tables, Row Level Security, Auth (email OTP, Google/Apple sign-in).
+- **Supabase:** Postgres tables, Row Level Security, email OTP (Google/Apple providers are a follow-up).
 - **Secure storage** for tokens: `expo-secure-store`.
 - **TanStack Query** for server state; optimistic updates; offline queueing.
 - **Protected routes** in Expo Router (auth group `(auth)` vs `(app)`), **deep links** for group invites (`expensesplit://join/<code>`).
@@ -176,9 +176,11 @@ Learn:
 
 Build:
 
-- [ ] Sign in / sign out.
-- [ ] Groups and expenses sync to Supabase; invite friends with a link.
-- [ ] Realtime updates when someone adds an expense.
+- [x] Email link sign in / sign out, with local-only guest access.
+- [x] New signed-in groups and expenses sync to Supabase; invite friends with a deep link. Pre-existing local groups are not uploaded.
+- [x] Realtime updates refresh the local cache when shared group data changes.
+
+Apply the SQL migration in `supabase/migrations/` and configure `.env` plus Supabase Auth redirect URLs before testing against a live project. Google/Apple sign-in and provider-specific setup remain follow-up work.
 
 ---
 

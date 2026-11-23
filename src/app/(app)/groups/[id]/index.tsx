@@ -1,12 +1,14 @@
 import { router, useLocalSearchParams } from 'expo-router';
+import * as Linking from 'expo-linking';
 import { useEffect, useMemo } from 'react';
-import { FlatList, Pressable, StyleSheet, View } from 'react-native';
+import { Alert, FlatList, Pressable, Share, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { EmptyState } from '@/components/empty-state';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
+import { useAuth } from '@/features/auth/auth-provider';
 import { computeBalances, simplifyDebts } from '@/features/expenses/domain/balances';
 import { formatMoney } from '@/features/expenses/domain/money';
 import type { GroupExpense } from '@/features/groups/domain/group';
@@ -22,14 +24,15 @@ function formatGroupDate(date: string): string {
 
 export default function GroupDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { user } = useAuth();
   const group = useGroupsStore((state) => state.groups.find((item) => item.id === id));
   const status = useGroupsStore((state) => state.status);
   const error = useGroupsStore((state) => state.error);
   const loadGroups = useGroupsStore((state) => state.loadGroups);
 
   useEffect(() => {
-    if (status === 'idle') void loadGroups();
-  }, [loadGroups, status]);
+    if (status === 'idle') void loadGroups(user?.id);
+  }, [loadGroups, status, user?.id]);
 
   const balances = useMemo(() => computeBalances(group?.expenses ?? []), [group?.expenses]);
   const suggestedSettlements = useMemo(() => simplifyDebts(balances), [balances]);
@@ -37,6 +40,22 @@ export default function GroupDetailScreen() {
     () => new Map(group?.members.map((member) => [member.id, member.name]) ?? []),
     [group?.members],
   );
+
+  async function shareInvite() {
+    if (!group?.inviteCode) return;
+    const inviteUrl = Linking.createURL(`/join/${group.inviteCode}`);
+    try {
+      await Share.share({
+        message: `Join ${group.name} on Expense Split: ${inviteUrl}`,
+        url: inviteUrl,
+      });
+    } catch (error) {
+      Alert.alert(
+        'Could not share invitation',
+        error instanceof Error ? error.message : 'Please try again.',
+      );
+    }
+  }
 
   if (!group) {
     return (
@@ -81,7 +100,22 @@ export default function GroupDetailScreen() {
           <ThemedText style={styles.secondaryButtonText}>Settle up</ThemedText>
         </Pressable>
       </View>
-
+      {group.inviteCode ? (
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => void shareInvite()}
+          style={styles.inviteButton}>
+          <ThemedText style={styles.inviteButtonText}>Share group invite</ThemedText>
+        </Pressable>
+      ) : group.syncStatus === 'pending' ? (
+        <ThemedText type="small" themeColor="textSecondary">
+          This group is saved on this device and will be shared when it syncs.
+        </ThemedText>
+      ) : (
+        <ThemedText type="small" themeColor="textSecondary">
+          Local-only group. Sign in and create a new group to share it.
+        </ThemedText>
+      )}
       <ThemedText type="smallBold">Balances</ThemedText>
       <ThemedView type="backgroundElement" style={styles.memberCard}>
         {group.members.map((member) => {
@@ -212,6 +246,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.two,
   },
   secondaryButtonText: {
+    color: '#3c87f7',
+    fontWeight: '700',
+  },
+  inviteButton: {
+    minHeight: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: Spacing.three,
+    borderWidth: 1,
+    borderColor: '#3c87f7',
+    paddingHorizontal: Spacing.two,
+  },
+  inviteButtonText: {
     color: '#3c87f7',
     fontWeight: '700',
   },

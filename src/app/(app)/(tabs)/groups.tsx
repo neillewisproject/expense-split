@@ -1,33 +1,92 @@
 import { router } from 'expo-router';
 import { useEffect } from 'react';
-import { FlatList, Pressable, StyleSheet, View } from 'react-native';
+import { Alert, FlatList, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useQueryClient } from '@tanstack/react-query';
 
 import { EmptyState } from '@/components/empty-state';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import { useAuth } from '@/features/auth/auth-provider';
+import { sharedGroupsQueryKey } from '@/features/groups/components/group-cloud-sync';
 import { useGroupsStore } from '@/features/groups/store';
 
 export default function GroupsScreen() {
+  const { user, signOut } = useAuth();
+  const queryClient = useQueryClient();
   const groups = useGroupsStore((state) => state.groups);
   const status = useGroupsStore((state) => state.status);
   const error = useGroupsStore((state) => state.error);
+  const syncError = useGroupsStore((state) => state.syncError);
   const loadGroups = useGroupsStore((state) => state.loadGroups);
+  const retryPendingSync = useGroupsStore((state) => state.retryPendingSync);
 
   useEffect(() => {
-    if (status === 'idle') void loadGroups();
-  }, [loadGroups, status]);
+    if (status === 'idle') void loadGroups(user?.id);
+  }, [loadGroups, status, user?.id]);
+
+  function retryCloudSync() {
+    retryPendingSync();
+    if (user) void queryClient.invalidateQueries({ queryKey: sharedGroupsQueryKey(user.id) });
+  }
+
+  function handleSignOut() {
+    Alert.alert('Sign out?', 'Shared groups will be hidden until you sign in again.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Sign out',
+        style: 'destructive',
+        onPress: () => {
+          void signOut().catch((signOutError: unknown) => {
+            Alert.alert(
+              'Could not sign out',
+              signOutError instanceof Error ? signOutError.message : 'Please try again.',
+            );
+          });
+        },
+      },
+    ]);
+  }
 
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
-        <ThemedText type="subtitle">Groups</ThemedText>
+        <View style={styles.titleRow}>
+          <ThemedText type="subtitle">Groups</ThemedText>
+          {user ? (
+            <Pressable
+              accessibilityRole="button"
+              onPress={handleSignOut}
+              style={styles.accountButton}>
+              <ThemedText type="small" themeColor="textSecondary">
+                Sign out
+              </ThemedText>
+            </Pressable>
+          ) : (
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => router.push('/sign-in')}
+              style={styles.accountButton}>
+              <ThemedText type="small" themeColor="textSecondary">
+                Sign in to sync
+              </ThemedText>
+            </Pressable>
+          )}
+        </View>
         {error ? (
           <View accessibilityRole="alert" style={styles.error}>
             <ThemedText type="small">{error}</ThemedText>
-            <Pressable accessibilityRole="button" onPress={() => void loadGroups()}>
+            <Pressable accessibilityRole="button" onPress={() => void loadGroups(user?.id)}>
               <ThemedText type="linkPrimary">Try again</ThemedText>
+            </Pressable>
+          </View>
+        ) : null}
+        {syncError ? (
+          <View accessibilityRole="alert" style={styles.syncError}>
+            <ThemedText type="small">{syncError}</ThemedText>
+            <Pressable accessibilityRole="button" onPress={retryCloudSync}>
+              <ThemedText type="linkPrimary">Retry sync</ThemedText>
             </Pressable>
           </View>
         ) : null}
@@ -55,6 +114,11 @@ export default function GroupsScreen() {
                 <ThemedText type="smallBold">{item.name}</ThemedText>
                 <ThemedText type="small" themeColor="textSecondary">
                   {item.members.length} members · {item.expenses.length} expenses
+                  {item.syncStatus === 'pending'
+                    ? ' · Sync pending'
+                    : item.syncUserId
+                      ? ' · Shared'
+                      : ' · On this device'}
                 </ThemedText>
               </View>
               <ThemedText type="small" themeColor="textSecondary">
@@ -87,6 +151,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.four,
     paddingTop: Spacing.four,
     paddingBottom: BottomTabInset,
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  accountButton: {
+    minHeight: 44,
+    justifyContent: 'center',
+    paddingHorizontal: Spacing.two,
   },
   listContent: {
     flexGrow: 1,
@@ -126,5 +200,11 @@ const styles = StyleSheet.create({
     padding: Spacing.two,
     borderRadius: Spacing.two,
     backgroundColor: '#fce8e6',
+  },
+  syncError: {
+    gap: Spacing.one,
+    padding: Spacing.two,
+    borderRadius: Spacing.two,
+    backgroundColor: '#fff3cd',
   },
 });

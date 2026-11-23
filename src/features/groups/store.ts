@@ -1,4 +1,4 @@
-import { desc } from 'drizzle-orm';
+import { desc, eq } from 'drizzle-orm';
 import { randomUUID } from 'expo-crypto';
 import { create } from 'zustand';
 
@@ -30,9 +30,15 @@ type GroupsState = {
   groups: GroupWithDetails[];
   status: GroupsStatus;
   error: string | null;
-  loadGroups: () => Promise<void>;
-  createGroup: (name: string, memberNames: string[]) => Promise<string>;
+  syncError: string | null;
+  syncRetry: number;
+  activeUserId: string | null;
+  loadGroups: (userId?: string) => Promise<void>;
+  createGroup: (name: string, memberNames: string[], syncUserId?: string) => Promise<string>;
   addGroupExpense: (groupId: string, input: GroupExpenseInput) => Promise<void>;
+  markGroupSynced: (groupId: string, inviteCode: string) => Promise<void>;
+  setSyncError: (message: string | null) => void;
+  retryPendingSync: () => void;
 };
 
 function getErrorMessage(error: unknown): string {
@@ -70,6 +76,9 @@ function groupRows(
   return groupRows.map((group) => ({
     ...group,
     members: membersByGroup.get(group.id) ?? [],
+    syncUserId: group.syncUserId,
+    syncStatus: group.syncStatus,
+    inviteCode: group.inviteCode,
     expenses: (expensesByGroup.get(group.id) ?? []).map((expense): GroupExpense => ({
       id: expense.id,
       description: expense.description,
@@ -85,7 +94,7 @@ function groupRows(
   }));
 }
 
-async function readGroups(): Promise<GroupWithDetails[]> {
+async function readGroups(userId?: string): Promise<GroupWithDetails[]> {
   const db = await getExpenseDatabase();
   const [storedGroups, members, storedExpenses, splits] = await Promise.all([
     db.select().from(groups).orderBy(desc(groups.createdAt)),
@@ -96,24 +105,39 @@ async function readGroups(): Promise<GroupWithDetails[]> {
       .orderBy(desc(groupExpenses.date), desc(groupExpenses.createdAt)),
     db.select().from(expenseSplits),
   ]);
-  return groupRows(storedGroups, members, storedExpenses, splits);
+  return groupRows(storedGroups, members, storedExpenses, splits).filter(
+    (group) => group.syncUserId === null || group.syncUserId === userId,
+  );
 }
 
 export const useGroupsStore = create<GroupsState>((set, get) => ({
   groups: [],
   status: 'idle',
   error: null,
+  syncError: null,
+  syncRetry: 0,
+  activeUserId: null,
 
-  loadGroups: async () => {
-    set({ status: 'loading', error: null });
+  loadGroups: async (userId) => {
+    const nextUserId = userId ?? null;
+    set((state) => ({
+      status: 'loading',
+      error: null,
+      groups: state.activeUserId === nextUserId ? state.groups : [],
+    }));
     try {
-      set({ groups: await readGroups(), status: 'ready', error: null });
+      set({
+        groups: await readGroups(userId),
+        status: 'ready',
+        error: null,
+        activeUserId: userId ?? null,
+      });
     } catch (error) {
       set({ status: 'error', error: `Could not load groups: ${getErrorMessage(error)}` });
     }
   },
 
-  createGroup: async (name, memberNames) => {
+  createGroup: async (name, memberNames, syncUserId) => {
     const cleanName = name.trim();
     const cleanMembers = memberNames.map((member) => member.trim()).filter(Boolean);
     const uniqueNames = new Set(cleanMembers.map((member) => member.toLowerCase()));
@@ -133,10 +157,25 @@ export const useGroupsStore = create<GroupsState>((set, get) => ({
     try {
       const db = await getExpenseDatabase();
       db.transaction((transaction) => {
-        transaction.insert(groups).values({ id, name: cleanName, createdAt }).run();
+        transaction
+          .insert(groups)
+          .values({
+            id,
+            name: cleanName,
+            createdAt,
+            syncUserId: syncUserId ?? null,
+            syncStatus: syncUserId ? 'pending' : 'local',
+            inviteCode: null,
+          })
+          .run();
         transaction.insert(groupMembers).values(memberRows).run();
       });
-      set({ groups: await readGroups(), status: 'ready', error: null });
+      set({
+        groups: await readGroups(syncUserId),
+        status: 'ready',
+        error: null,
+        activeUserId: syncUserId ?? null,
+      });
       return id;
     } catch (error) {
       const message = `Could not create group: ${getErrorMessage(error)}`;
@@ -190,12 +229,37 @@ export const useGroupsStore = create<GroupsState>((set, get) => ({
           .insert(expenseSplits)
           .values(splitEntries.map(([memberId, amount]) => ({ expenseId: id, memberId, amount })))
           .run();
+        if (group.syncUserId) {
+          transaction
+            .update(groups)
+            .set({ syncStatus: 'pending' })
+            .where(eq(groups.id, groupId))
+            .run();
+        }
       });
-      set({ groups: await readGroups(), status: 'ready', error: null });
+      set({
+        groups: await readGroups(get().activeUserId ?? undefined),
+        status: 'ready',
+        error: null,
+      });
     } catch (error) {
       const message = `Could not save group expense: ${getErrorMessage(error)}`;
       set({ error: message });
       throw new Error(message, { cause: error });
     }
   },
+
+  markGroupSynced: async (groupId, inviteCode) => {
+    const userId = get().activeUserId;
+    const db = await getExpenseDatabase();
+    await db.update(groups).set({ syncStatus: 'synced', inviteCode }).where(eq(groups.id, groupId));
+    set({
+      groups: await readGroups(userId ?? undefined),
+      syncError: null,
+    });
+  },
+
+  setSyncError: (syncError) => set({ syncError }),
+
+  retryPendingSync: () => set((state) => ({ syncRetry: state.syncRetry + 1 })),
 }));
