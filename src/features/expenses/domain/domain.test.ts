@@ -244,3 +244,20 @@ describe('simplifyDebts', () => {
     );
   });
 });
+
+it('formats money without passing BigInt to Intl, which Hermes rejects', () => {
+  const original = Intl.NumberFormat.prototype.formatToParts;
+  const spy = jest.spyOn(Intl.NumberFormat.prototype, 'formatToParts').mockImplementation(function (
+    this: Intl.NumberFormat,
+    value?: Parameters<Intl.NumberFormat['formatToParts']>[0],
+  ) {
+    if (typeof value === 'bigint') throw new TypeError('Cannot convert BigInt to number');
+    return original.call(this, value as number);
+  });
+  try {
+    expect(formatMoney(123456, 'INR')).toBe('₹1,234.56');
+    expect(formatMoney(-5, 'INR')).toBe('-₹0.05');
+  } finally {
+    spy.mockRestore();
+  }
+});

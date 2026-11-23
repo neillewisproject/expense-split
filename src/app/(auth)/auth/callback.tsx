@@ -7,7 +7,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useAuth } from '@/features/auth/auth-provider';
-import { getSupabaseClient } from '@/lib/supabase';
+import { completeSignInLink } from '@/features/auth/sign-in-link';
 
 function single(value: string | string[] | undefined): string | undefined {
   return Array.isArray(value) ? value[0] : value;
@@ -47,10 +47,8 @@ export default function AuthCallbackScreen() {
 
     if (!isConfigured || callbackError || !code) return;
 
-    void getSupabaseClient()
-      .auth.exchangeCodeForSession(code)
-      .then(({ error: exchangeError }) => {
-        if (exchangeError) throw exchangeError;
+    void completeSignInLink(code)
+      .then(() => {
         if (inviteCode) {
           router.replace({ pathname: '/join/[code]', params: { code: inviteCode } });
         } else {

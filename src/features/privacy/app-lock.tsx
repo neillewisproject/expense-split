@@ -6,7 +6,8 @@ import { AppState, Platform, Pressable, View } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 
-const LOCK_KEY = 'expense-split:app-lock';
+// SecureStore keys may contain only letters, digits, ".", "-" and "_".
+const LOCK_KEY = 'expense-split.app-lock';
 type LockContext = { enabled: boolean; setEnabled: (value: boolean) => Promise<void> };
 const Context = createContext<LockContext | null>(null);
 

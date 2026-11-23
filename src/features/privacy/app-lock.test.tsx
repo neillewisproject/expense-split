@@ -33,6 +33,18 @@ describe('app lock', () => {
     expect(await screen.findByText('Private ledger')).toBeTruthy();
   });
 
+  it('uses a key that native SecureStore accepts', async () => {
+    await render(
+      <AppLockProvider>
+        <Text>Private ledger</Text>
+      </AppLockProvider>,
+    );
+    await screen.findByText('Unlock with device authentication');
+    const keys = jest.mocked(SecureStore.getItemAsync).mock.calls.map(([key]) => key);
+    expect(keys.length).toBeGreaterThan(0);
+    for (const key of keys) expect(key).toMatch(/^[\w.-]+$/);
+  });
+
   it('does not unlock after canceled authentication', async () => {
     jest
       .mocked(LocalAuthentication.authenticateAsync)

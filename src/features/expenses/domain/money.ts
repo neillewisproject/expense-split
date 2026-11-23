@@ -60,8 +60,9 @@ export function formatMoney(
   const exponent = getCurrencyExponent(currency);
   const magnitude = BigInt(Math.abs(amount));
   const divisor = 10n ** BigInt(exponent);
-  const whole = magnitude / divisor;
-  const signedWhole = amount < 0 ? (whole === 0n ? -0 : -whole) : whole;
+  // Hermes' Intl cannot format BigInt; the whole part of a safe integer is itself safe.
+  const whole = Number(magnitude / divisor);
+  const signedWhole = amount < 0 ? -whole : whole;
   const digits = new Intl.NumberFormat(locale, { useGrouping: false });
   const fraction = String(magnitude % divisor)
     .padStart(exponent, '0')

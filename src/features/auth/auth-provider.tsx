@@ -5,6 +5,8 @@ import { AppState, Platform } from 'react-native';
 
 import { getSupabaseClient, isSupabaseConfigured } from '@/lib/supabase';
 
+import { completeSignInLink, readSignInLink } from './sign-in-link';
+
 type AuthContextValue = {
   session: Session | null;
   user: User | null;
@@ -64,6 +66,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setIsLoading(false);
       });
 
+    const handleUrl = (url: string | null) => {
+      const link = readSignInLink(url);
+      if (!link || !active) return;
+      if (link.error) {
+        setError(link.error);
+        return;
+      }
+      if (link.code) {
+        completeSignInLink(link.code).catch((linkError: unknown) => {
+          if (active) setError(getErrorMessage(linkError));
+        });
+      }
+    };
+    void Linking.getInitialURL()
+      .then(handleUrl)
+      .catch(() => undefined);
+    const urlSubscription = Linking.addEventListener('url', ({ url }) => handleUrl(url));
+
     const appStateSubscription =
       Platform.OS === 'web'
         ? null
@@ -78,6 +98,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => {
       active = false;
       subscription.unsubscribe();
+      urlSubscription.remove();
       appStateSubscription?.remove();
       void client.auth.stopAutoRefresh();
     };
