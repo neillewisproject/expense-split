@@ -31,8 +31,8 @@ Add packages with `npx expo install <package>` so versions match the Expo SDK.
 
 1. Create a Supabase project and run [`supabase/migrations/20261123000000_shared_groups.sql`](./supabase/migrations/20261123000000_shared_groups.sql) in its SQL Editor (or apply it with the Supabase CLI).
 2. Copy `.env.example` to `.env` and set `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` from the Supabase project’s Connect dialog. These are client-side values; never put a service-role key in the app.
-3. In Supabase Auth, enable email sign-in and add `expensesplit://auth/callback` to the allowed redirect URLs. When testing in Expo Go, also allow the development URL returned by Expo Linking.
-4. Restart Expo after changing `.env`. Sign in with an emailed link, then create a new group to share it. Groups already on the device remain local-only.
+3. In Supabase Auth, enable email sign-in and add `expensesplit://**` and `exp://**` to the allowed redirect URLs. Under **Authentication → Emails → Magic Link**, add `{{ .Token }}` to the template so the email includes the 6-digit code the app asks for.
+4. Restart Expo after changing `.env`. Sign in with the emailed code (or link), then create a new group to share it. Groups already on the device remain local-only.
 
 Shared group changes are saved in SQLite first and queued for retry when connectivity returns. Authenticated group members can use invite links; Realtime refreshes the local cache when other members add or change shared group data. Google and Apple sign-in are not configured in this email-first milestone.
 

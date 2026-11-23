@@ -12,11 +12,20 @@ import { useTheme } from '@/hooks/use-theme';
 export default function SignInScreen() {
   const theme = useTheme();
   const { inviteCode } = useLocalSearchParams<{ inviteCode?: string }>();
-  const { isConfigured, error: authError, continueAsGuest, sendSignInLink } = useAuth();
+  const {
+    isConfigured,
+    error: authError,
+    continueAsGuest,
+    sendSignInLink,
+    verifyEmailCode,
+  } = useAuth();
   const [email, setEmail] = useState('');
+  const [code, setCode] = useState('');
+  const [codeSent, setCodeSent] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isSending, setIsSending] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
 
   async function handleSendLink() {
     setError(null);
@@ -24,11 +33,29 @@ export default function SignInScreen() {
     setIsSending(true);
     try {
       await sendSignInLink(email, inviteCode);
-      setMessage('Check your email and open the sign-in link on this device.');
+      setCodeSent(true);
+      setMessage('Check your email. Enter the 6-digit code below, or open the link on this phone.');
     } catch (sendError) {
       setError(sendError instanceof Error ? sendError.message : 'Could not send the sign-in link.');
     } finally {
       setIsSending(false);
+    }
+  }
+
+  async function handleVerifyCode() {
+    setError(null);
+    setIsVerifying(true);
+    try {
+      await verifyEmailCode(email, code);
+      if (inviteCode) {
+        router.replace({ pathname: '/join/[code]', params: { code: inviteCode } });
+      }
+    } catch (verifyError) {
+      setError(
+        verifyError instanceof Error ? verifyError.message : 'That code is invalid or expired.',
+      );
+    } finally {
+      setIsVerifying(false);
     }
   }
 
@@ -46,7 +73,7 @@ export default function SignInScreen() {
           <ThemedText type="title">Expense Split</ThemedText>
           <ThemedText type="subtitle">Sign in with email</ThemedText>
           <ThemedText themeColor="textSecondary">
-            We’ll email you a secure, one-time sign-in link. No password required.
+            We’ll email you a one-time code. No password required.
           </ThemedText>
           {inviteCode ? (
             <ThemedText type="smallBold">Sign in to accept your group invitation.</ThemedText>
@@ -91,13 +118,41 @@ export default function SignInScreen() {
             disabled={!isConfigured || isSending || !email.trim()}
             onPress={() => void handleSendLink()}
             style={[
-              styles.button,
+              codeSent ? styles.secondaryButton : styles.button,
               (!isConfigured || isSending || !email.trim()) && styles.disabled,
             ]}>
-            <ThemedText style={styles.buttonText}>
-              {isSending ? 'Sending…' : 'Send sign-in link'}
+            <ThemedText style={codeSent ? styles.secondaryButtonText : styles.buttonText}>
+              {isSending ? 'Sending…' : codeSent ? 'Send a new code' : 'Send sign-in code'}
             </ThemedText>
           </Pressable>
+          {codeSent ? (
+            <>
+              <View style={styles.field}>
+                <ThemedText type="smallBold">Code from email</ThemedText>
+                <TextInput
+                  accessibilityLabel="Code from email"
+                  autoComplete="one-time-code"
+                  keyboardType="number-pad"
+                  maxLength={10}
+                  onChangeText={setCode}
+                  placeholder="123456"
+                  placeholderTextColor={theme.textSecondary}
+                  style={inputStyle}
+                  textContentType="oneTimeCode"
+                  value={code}
+                />
+              </View>
+              <Pressable
+                accessibilityRole="button"
+                disabled={isVerifying || code.trim().length < 6}
+                onPress={() => void handleVerifyCode()}
+                style={[styles.button, (isVerifying || code.trim().length < 6) && styles.disabled]}>
+                <ThemedText style={styles.buttonText}>
+                  {isVerifying ? 'Verifying…' : 'Sign in'}
+                </ThemedText>
+              </Pressable>
+            </>
+          ) : null}
           <Pressable accessibilityRole="button" onPress={handleContinueAsGuest}>
             <ThemedText type="linkPrimary">Continue using local-only groups</ThemedText>
           </Pressable>
@@ -142,6 +197,19 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: '#ffffff',
+    fontWeight: '700',
+  },
+  secondaryButton: {
+    minHeight: 52,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: Spacing.three,
+    borderWidth: 1,
+    borderColor: '#3c87f7',
+    padding: Spacing.three,
+  },
+  secondaryButtonText: {
+    color: '#3c87f7',
     fontWeight: '700',
   },
   disabled: {

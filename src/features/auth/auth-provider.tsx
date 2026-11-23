@@ -14,6 +14,7 @@ type AuthContextValue = {
   error: string | null;
   continueAsGuest: () => void;
   sendSignInLink: (email: string, inviteCode?: string) => Promise<void>;
+  verifyEmailCode: (email: string, code: string) => Promise<void>;
   signOut: () => Promise<void>;
 };
 
@@ -93,6 +94,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (signInError) throw signInError;
   }, []);
 
+  const verifyEmailCode = useCallback(async (email: string, code: string) => {
+    const { error: verifyError } = await getSupabaseClient().auth.verifyOtp({
+      email: email.trim(),
+      token: code.trim(),
+      type: 'email',
+    });
+    if (verifyError) throw verifyError;
+  }, []);
+
   const signOut = useCallback(async () => {
     const { error: signOutError } = await getSupabaseClient().auth.signOut();
     if (signOutError) throw signOutError;
@@ -110,9 +120,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       error,
       continueAsGuest,
       sendSignInLink,
+      verifyEmailCode,
       signOut,
     }),
-    [continueAsGuest, error, isConfigured, isGuest, isLoading, sendSignInLink, session, signOut],
+    [
+      continueAsGuest,
+      error,
+      isConfigured,
+      isGuest,
+      isLoading,
+      sendSignInLink,
+      session,
+      signOut,
+      verifyEmailCode,
+    ],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

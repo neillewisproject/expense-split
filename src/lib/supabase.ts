@@ -1,3 +1,5 @@
+import './crypto-polyfill';
+
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient, type SupportedStorage, type SupabaseClient } from '@supabase/supabase-js';
 import * as SecureStore from 'expo-secure-store';
@@ -18,16 +20,8 @@ const secureStorage: SupportedStorage = {
 let client: SupabaseClient<Database> | null = null;
 
 export function isSupabaseConfigured(): boolean {
-  if (!supabaseUrl || !supabaseKey) return false;
-  try {
-    const parsedUrl = new URL(supabaseUrl);
-    return (
-      (parsedUrl.protocol === 'https:' || parsedUrl.protocol === 'http:') &&
-      parsedUrl.hostname.length > 0
-    );
-  } catch {
-    return false;
-  }
+  // Avoid `new URL()` here: React Native's URL implementation can throw on property access.
+  return Boolean(supabaseUrl && supabaseKey && /^https?:\/\/[^\s/]+/.test(supabaseUrl));
 }
 
 export function getSupabaseClient(): SupabaseClient<Database> {
