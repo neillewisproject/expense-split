@@ -53,7 +53,7 @@ function PersonalCloudPanel({ userId, isConfigured }: { userId?: string; isConfi
   }
 
   function summary(backup: PersonalBackup) {
-    return `${backup.expenses.length} transactions, ${backup.accounts.length} accounts, ${backup.budgets.length} budgets, ${backup.rules.length} schedules, ${backup.goals.length} savings goals, ${backup.contributions.length} reservations/releases and ${backup.cashMovements.length} group cash movements. Photos omitted: ${backup.omittedReceiptCount}.`;
+    return `${backup.expenses.length} transactions, ${backup.accounts.length} accounts, ${backup.budgets.length} budgets, ${backup.rules.length} schedules and ${backup.cashMovements.length} group cash movements. Photos omitted: ${backup.omittedReceiptCount}.${backup.skippedGoalCount ? ` ${backup.skippedGoalCount} savings goals from this older copy will be skipped.` : ''}`;
   }
 
   return (
@@ -160,7 +160,7 @@ function PersonalCloudPanel({ userId, isConfigured }: { userId?: string; isConfi
               const selected = cloud;
               Alert.alert(
                 'Replace local personal records?',
-                'Accounts, transactions, budgets, schedules, savings goals, category rules and group cash movements and matches will be replaced. Older backups contain no category rules. Versions 1–3 contain no group cash movements; version 4 contains no matches; older budgets use personal-only spending. Group ledgers are untouched. Receipt images are not restored from cloud.',
+                'Accounts, transactions, budgets, schedules, category rules and group cash movements and matches will be replaced. Savings goals in older copies are skipped. Older backups contain no category rules. Versions 1–3 contain no group cash movements; version 4 contains no matches; older budgets use personal-only spending. Group ledgers are untouched. Receipt images are not restored from cloud.',
                 [
                   { text: 'Cancel', style: 'cancel' },
                   {

@@ -23,7 +23,6 @@ const ICONS = {
   unchecked: { ios: 'circle', android: 'radio_button_unchecked' },
   wallet: { ios: 'creditcard.fill', android: 'account_balance_wallet' },
   budget: { ios: 'gauge.with.needle', android: 'speed' },
-  goal: { ios: 'flag.fill', android: 'flag' },
   report: { ios: 'chart.bar.fill', android: 'bar_chart' },
   breakdown: { ios: 'chart.pie', android: 'donut_large' },
   recurring: { ios: 'repeat', android: 'repeat' },

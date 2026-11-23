@@ -8,8 +8,6 @@ import { budgets } from '@/features/budgets/data/schema';
 import { recurringDrafts, recurringRules } from '@/features/recurrence/data/schema';
 import { personalSettings } from '@/features/settings/data/schema';
 import { parseCategoryRules } from '@/features/settings/domain/category-rules';
-import { savingsGoals, goalContributions } from '@/features/goals/data/schema';
-import { useGoalsStore } from '@/features/goals/store';
 import { useExpensesStore } from '@/features/expenses/store';
 import { groupCashMovements } from '@/features/group-cash/data/schema';
 import { useGroupCashStore } from '@/features/group-cash/store';
@@ -26,32 +24,21 @@ import {
 export async function createBackup(): Promise<string> {
   return personalMutation(async () => {
     const db = await getExpenseDatabase();
-    const [
-      entries,
-      accountRows,
-      budgetRows,
-      rules,
-      drafts,
-      settings,
-      goals,
-      contributions,
-      cashMovements,
-    ] = await Promise.all([
-      db.select().from(expenses),
-      db.select().from(accounts),
-      db.select().from(budgets),
-      db.select().from(recurringRules),
-      db.select().from(recurringDrafts),
-      db.select().from(personalSettings),
-      db.select().from(savingsGoals),
-      db.select().from(goalContributions),
-      db.select().from(groupCashMovements),
-    ]);
+    const [entries, accountRows, budgetRows, rules, drafts, settings, cashMovements] =
+      await Promise.all([
+        db.select().from(expenses),
+        db.select().from(accounts),
+        db.select().from(budgets),
+        db.select().from(recurringRules),
+        db.select().from(recurringDrafts),
+        db.select().from(personalSettings),
+        db.select().from(groupCashMovements),
+      ]);
     const preferences = settings.find((row) => row.id === 'personal');
     return JSON.stringify(
       {
         format: 'expense-split-personal',
-        version: 7,
+        version: 8,
         exportedAt: new Date().toISOString(),
         omittedReceiptCount: entries.reduce(
           (count, entry) => count + getReceiptUris(entry).length,
@@ -62,8 +49,6 @@ export async function createBackup(): Promise<string> {
         budgets: budgetRows,
         rules: rules.map((rule) => ({ ...rule, template: portableTemplate(rule.template) })),
         drafts: drafts.map((draft) => ({ ...draft, template: portableTemplate(draft.template) })),
-        goals,
-        contributions,
         cashMovements: cashMovements.map(({ groupUserId: _groupUserId, ...movement }) => movement),
         settings: {
           defaultCurrency: preferences?.defaultCurrency ?? 'INR',
@@ -109,8 +94,6 @@ export async function restoreBackup(text: string, beforeCommit?: () => void): Pr
       tx.delete(recurringDrafts).run();
       tx.delete(recurringRules).run();
       tx.delete(budgets).run();
-      tx.delete(goalContributions).run();
-      tx.delete(savingsGoals).run();
       tx.delete(groupCashMovements).run();
       tx.delete(expenses).run();
       tx.delete(accounts).run();
@@ -123,8 +106,6 @@ export async function restoreBackup(text: string, beforeCommit?: () => void): Pr
           .run();
       }
       for (const row of backup.budgets) tx.insert(budgets).values(row).run();
-      for (const row of backup.goals) tx.insert(savingsGoals).values(row).run();
-      for (const row of backup.contributions) tx.insert(goalContributions).values(row).run();
       for (const row of backup.cashMovements)
         tx.insert(groupCashMovements)
           .values({ ...row, groupUserId: null })
@@ -143,7 +124,6 @@ export async function restoreBackup(text: string, beforeCommit?: () => void): Pr
     await Promise.all([
       useExpensesStore.getState().loadExpenses(),
       usePersonalStore.getState().load(),
-      useGoalsStore.getState().load(),
       useGroupCashStore.getState().load(),
     ]);
     const retainedUris = new Set(

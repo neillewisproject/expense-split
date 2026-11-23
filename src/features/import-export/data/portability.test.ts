@@ -2,7 +2,6 @@ import { getTableName, type Table } from 'drizzle-orm';
 import { accounts } from '@/features/accounts/data/schema';
 import { budgets } from '@/features/budgets/data/schema';
 import { expenses } from '@/features/expenses/data/schema';
-import { goalContributions, savingsGoals } from '@/features/goals/data/schema';
 import { groupCashMovements } from '@/features/group-cash/data/schema';
 import { recurringDrafts, recurringRules } from '@/features/recurrence/data/schema';
 import { personalSettings } from '@/features/settings/data/schema';
@@ -18,9 +17,6 @@ jest.mock('@/features/accounts/store', () => ({
 }));
 jest.mock('@/features/expenses/store', () => ({
   useExpensesStore: { getState: () => ({ loadExpenses: mockReload }) },
-}));
-jest.mock('@/features/goals/store', () => ({
-  useGoalsStore: { getState: () => ({ load: mockReload }) },
 }));
 jest.mock('@/features/group-cash/store', () => ({
   useGroupCashStore: { getState: () => ({ load: mockReload }) },
@@ -67,8 +63,6 @@ beforeEach(() => {
     accounts,
     budgets,
     expenses,
-    goalContributions,
-    savingsGoals,
     groupCashMovements,
     recurringDrafts,
     recurringRules,
@@ -121,7 +115,7 @@ it('round-trips group cash and restores older backups without changing group led
     { id: 'movement', amount: 200, groupUserId: null },
   ]);
   expect(mockRows.groups).toEqual([{ id: 'trip' }]);
-  expect(mockReload).toHaveBeenCalledTimes(4);
+  expect(mockReload).toHaveBeenCalledTimes(3);
   const old = JSON.parse(backup) as Record<string, unknown>;
   old.version = 3;
   delete old.cashMovements;

@@ -42,7 +42,6 @@ const TOOLS: { title: string; subtitle: string; icon: IconName; route: Href }[] 
     icon: 'budget',
     route: '/budgets',
   },
-  { title: 'Savings goals', subtitle: 'Targets and reservations', icon: 'goal', route: '/goals' },
 ];
 
 export function InsightsScreen() {

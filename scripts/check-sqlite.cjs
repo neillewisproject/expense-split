@@ -64,7 +64,7 @@ try {
   journal.entries.slice(9, 10).forEach(migrate);
   db.exec(`insert into personal_settings(id,default_currency,categories)
     values('personal','INR','["Travel"]');`);
-  journal.entries.slice(10).forEach(migrate);
+  journal.entries.slice(10, 11).forEach(migrate);
   assert.deepEqual(
     {
       ...db
@@ -196,8 +196,24 @@ try {
     'file:///legacy.jpg',
     'file:///second.jpg',
   ]);
+  // 0011 removes the savings-goals feature: only its two tables are dropped.
+  journal.entries.slice(11).forEach(migrate);
+  const tables = db
+    .prepare("select name from sqlite_master where type='table'")
+    .all()
+    .map((row) => row.name);
+  assert.ok(!tables.includes('personal_savings_goals'));
+  assert.ok(!tables.includes('personal_goal_contributions'));
+  assert.equal(db.prepare('select count(*) total from personal_accounts').get().total, 1);
+  assert.equal(db.prepare('select count(*) total from expenses').get().total, 1);
+  assert.equal(
+    db.prepare('select count(*) total from personal_group_cash_movements').get().total,
+    2,
+  );
+  assert.deepEqual(balances(), before);
+  assert.deepEqual(db.prepare('PRAGMA foreign_key_check').all(), []);
   console.log(
-    `PASS: ${journal.entries.length} bundled SQLite migrations preserve legacy amounts, balances, receipts and local ownership; savings, group cash snapshots and multi-photo fields persist.`,
+    `PASS: ${journal.entries.length} bundled SQLite migrations preserve legacy amounts, balances, receipts and local ownership; group cash snapshots and multi-photo fields persist; removed savings-goal tables are dropped without touching other data.`,
   );
 } finally {
   db.close();

@@ -32,7 +32,7 @@ import { useTheme } from '@/hooks/use-theme';
 const QUICK_ACTIONS: { label: string; icon: IconName; route: Href }[] = [
   { label: 'Accounts', icon: 'wallet', route: '/accounts' },
   { label: 'Budgets', icon: 'budget', route: '/budgets' },
-  { label: 'Goals', icon: 'goal', route: '/goals' },
+  { label: 'Reports', icon: 'report', route: '/reports' },
   { label: 'Recurring', icon: 'recurring', route: '/recurring' },
 ];
 

@@ -64,7 +64,7 @@ export function PortabilityScreen() {
       } else {
         const result = previewBackup(text);
         setPreviewText(
-          `Replace personal data with ${result.expenses.length} transactions (including trash), ${result.accounts.length} accounts, ${result.budgets.length} budgets, ${result.rules.length} schedules, ${result.drafts.length} drafts, ${result.goals.length} savings goals, ${result.contributions.length} reservations/releases and ${result.cashMovements.length} group cash movements. ${result.omittedReceiptCount} receipt photos are not included. Group ledgers are untouched.`,
+          `Replace personal data with ${result.expenses.length} transactions (including trash), ${result.accounts.length} accounts, ${result.budgets.length} budgets, ${result.rules.length} schedules, ${result.drafts.length} drafts and ${result.cashMovements.length} group cash movements. ${result.omittedReceiptCount} receipt photos are not included.${result.skippedGoalCount ? ` ${result.skippedGoalCount} savings goals in this older backup will be skipped because the feature was removed.` : ''} Group ledgers are untouched.`,
         );
         setPreviewSource(text);
       }
@@ -76,17 +76,18 @@ export function PortabilityScreen() {
     <PersonalPage title="Import, export and recovery">
       <ThemedText>
         CSV uses the exported column template, ISO dates, currency-aware decimal amounts, JSON tags,
-        and local account IDs. Import requires a valid preview. JSON v7 restores personal financial
-        records/settings, category rules, budget basis and carryover, savings goals, group cash
-        snapshots and transaction matches, and schedule time zones/end dates. Versions 1–6 are
-        accepted; older backups have no category rules and replace existing rules with none. Older
-        budgets use the personal-only basis. Versions 1–3 have no group cash movements, and version
-        4 has no transaction matches. Restoring any backup replaces existing group cash movements,
-        even when the backup contains none. Older schedules use the device time zone. Cash snapshots
-        include group, entry, participant and local account identifiers, but not signed-in user IDs.
-        No auth tokens or group ledgers are included. Receipt image bytes are NOT backed up;
-        existing same-ID local photos are retained, imported file URIs are rejected. This is not a
-        lossless attachment bundle.
+        and local account IDs. Import requires a valid preview. JSON v8 restores personal financial
+        records/settings, category rules, budget basis and carryover, group cash snapshots and
+        transaction matches, and schedule time zones/end dates. Versions 1–7 are accepted; savings
+        goals in versions 2–7 are skipped because the feature was removed. Older backups have no
+        category rules and replace existing rules with none. Older budgets use the personal-only
+        basis. Versions 1–3 have no group cash movements, and version 4 has no transaction matches.
+        Restoring any backup replaces existing group cash movements, even when the backup contains
+        none. Older schedules use the device time zone. Cash snapshots include group, entry,
+        participant and local account identifiers, but not signed-in user IDs. No auth tokens or
+        group ledgers are included. Receipt image bytes are NOT backed up; existing same-ID local
+        photos are retained, imported file URIs are rejected. This is not a lossless attachment
+        bundle.
       </ThemedText>
       <Choices
         values={[

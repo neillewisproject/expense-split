@@ -17,7 +17,7 @@ const entry: StoredExpense = {
 function backup() {
   return {
     format: 'expense-split-personal',
-    version: 7,
+    version: 8,
     exportedAt: timestamp,
     omittedReceiptCount: 0,
     accounts: [],
@@ -25,8 +25,6 @@ function backup() {
     budgets: [],
     rules: [],
     drafts: [],
-    goals: [],
-    contributions: [],
     cashMovements: [],
     settings: { defaultCurrency: 'INR', categories: ['Travel'], categoryRules: [] },
   };
@@ -119,29 +117,36 @@ it('round-trips versioned personal financial data without importing auth tokens 
       }),
     ),
   ).toThrow('Invalid backup');
-  expect(() => previewBackup(JSON.stringify({ ...value, version: 8 }))).toThrow('Invalid backup');
+  expect(() => previewBackup(JSON.stringify({ ...value, version: 9 }))).toThrow('Invalid backup');
 });
-it('upgrades old financial backups and validates new savings relationships', () => {
-  const { goals: _goals, contributions: _contributions, ...old } = backup();
-  expect(previewBackup(JSON.stringify({ ...old, version: 1 }))).toEqual(backup());
-  expect(() => previewBackup(JSON.stringify(old))).toThrow('backups require goals');
-  expect(() =>
-    previewBackup(
-      JSON.stringify({
-        ...backup(),
-        contributions: [
-          {
-            id: 'missing',
-            goalId: 'unknown',
-            amount: 100,
-            date: '2026-03-01',
-            note: '',
-            createdAt: timestamp,
-          },
-        ],
-      }),
-    ),
-  ).toThrow('missing goal');
+it('skips savings goals from older backups and rejects them in version 8', () => {
+  const goal = {
+    id: 'trip',
+    name: 'Trip',
+    accountId: 'cash',
+    currency: 'INR',
+    target: 5000,
+    targetDate: null,
+    createdAt: timestamp,
+    updatedAt: timestamp,
+  };
+  const reservation = {
+    id: 'reserve',
+    goalId: 'trip',
+    amount: 1200,
+    date: '2026-03-01',
+    note: '',
+    createdAt: timestamp,
+  };
+  const old = { ...backup(), version: 7, goals: [goal], contributions: [reservation] };
+  const preview = previewBackup(JSON.stringify(old));
+  expect(preview).toEqual({ ...backup(), skippedGoalCount: 1 });
+  expect(preview).not.toHaveProperty('goals');
+  expect(preview).not.toHaveProperty('contributions');
+  expect(previewBackup(JSON.stringify({ ...backup(), version: 1 }))).toEqual(backup());
+  expect(() => previewBackup(JSON.stringify({ ...old, version: 8 }))).toThrow(
+    'do not contain savings goals',
+  );
 });
 it('preserves group cash snapshots and rejects missing accounts and duplicate active links', () => {
   const movement = {
@@ -288,7 +293,7 @@ it('round-trips bounded zoned schedules and upgrades legacy schedules to device 
     previewBackup(JSON.stringify({ ...value, rules: [{ ...schedule, timeZone: 'not/a-zone' }] })),
   ).toThrow('IANA time zone');
 });
-it('preserves savings reservations/releases and linked budget carryover', () => {
+it('preserves linked budget carryover and rejects a missing carryover source', () => {
   const previous = {
     id: 'previous',
     name: 'Monthly budget',
@@ -304,77 +309,15 @@ it('preserves savings reservations/releases and linked budget carryover', () => 
   };
   const value = {
     ...backup(),
-    accounts: [
-      {
-        id: 'cash',
-        name: 'Cash',
-        currency: 'INR',
-        openingBalance: 10000,
-        archived: false,
-        createdAt: timestamp,
-      },
-    ],
     budgets: [
       previous,
       { ...previous, id: 'current', month: '2026-03', carryoverFromId: previous.id },
-    ],
-    goals: [
-      {
-        id: 'trip',
-        name: 'Trip',
-        accountId: 'cash',
-        currency: 'INR',
-        target: 5000,
-        targetDate: null,
-        createdAt: timestamp,
-        updatedAt: timestamp,
-      },
-    ],
-    contributions: [
-      {
-        id: 'reserve',
-        goalId: 'trip',
-        amount: 1200,
-        date: '2026-03-01',
-        note: 'Reserve',
-        createdAt: timestamp,
-      },
-      {
-        id: 'release',
-        goalId: 'trip',
-        amount: -200,
-        date: '2026-03-01',
-        note: 'Release',
-        createdAt: timestamp,
-      },
     ],
   };
   expect(previewBackup(JSON.stringify(value))).toEqual(value);
   expect(() =>
     previewBackup(
-      JSON.stringify({
-        ...value,
-        contributions: [{ ...value.contributions[0], amount: -1 }],
-      }),
-    ),
-  ).toThrow('releases exceed reserved funds');
-  expect(() =>
-    previewBackup(
-      JSON.stringify({
-        ...value,
-        budgets: [{ ...previous, carryoverFromId: 'unknown' }],
-      }),
-    ),
-  ).toThrow();
-  expect(() =>
-    previewBackup(
-      JSON.stringify({
-        ...value,
-        contributions: [
-          { ...value.contributions[0], amount: Number.MAX_SAFE_INTEGER },
-          { ...value.contributions[1], amount: 1 },
-        ],
-      }),
+      JSON.stringify({ ...value, budgets: [{ ...previous, carryoverFromId: 'unknown' }] }),
     ),
   ).toThrow();
 });

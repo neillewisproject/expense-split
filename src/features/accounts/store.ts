@@ -31,7 +31,6 @@ import {
 } from '@/features/settings/domain/category-rules';
 import { prepareBulkChange, type BulkAction } from './domain/bulk';
 import { validateCarryover } from '@/features/reports/domain/reports';
-import { savingsGoals } from '@/features/goals/data/schema';
 import { groupCashMovements } from '@/features/group-cash/data/schema';
 import { validateMatchedTransaction } from '@/features/group-cash/domain/cash';
 
@@ -119,7 +118,6 @@ export const usePersonalStore = create<PersonalState>((set, get) => ({
           ((await db.select().from(expenses)).some(
             (row) => row.accountId === id || row.toAccountId === id,
           ) ||
-            (await db.select().from(savingsGoals)).some((goal) => goal.accountId === id) ||
             (await db.select().from(groupCashMovements)).some((row) => row.accountId === id))
         )
           throw new Error('Currency cannot change after an account has transactions');

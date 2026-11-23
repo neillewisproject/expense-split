@@ -5,7 +5,6 @@ import { expenseFormSchema } from '@/features/expenses/domain/expense';
 import { validateEntry } from '@/features/expenses/domain/ledger';
 import { amountToInput, parseAmount, SUPPORTED_CURRENCIES } from '@/features/expenses/domain/money';
 import { dateInTimeZone, nextOccurrence } from '@/features/recurrence/domain/schedule';
-import { goalSaved, validateGoal } from '@/features/goals/domain/goals';
 import { budgetProgress, validateCarryover } from '@/features/reports/domain/reports';
 import { matchesCashTransaction } from '@/features/group-cash/domain/cash';
 import { categoryRulesSchema } from '@/features/settings/domain/category-rules';
@@ -111,28 +110,9 @@ const ruleSchema = z
 const draftSchema = z
   .object({ id, ruleId: id, date, template, status: z.enum(['pending', 'approved', 'skipped']) })
   .strict();
-const goalSchema = z
-  .object({
-    id,
-    name: z.string().trim().min(1).max(80),
-    accountId: id,
-    currency,
-    target: safeInteger.refine((value) => value > 0),
-    targetDate: date.nullable(),
-    createdAt: timestamp,
-    updatedAt: timestamp,
-  })
-  .strict();
-const contributionSchema = z
-  .object({
-    id,
-    goalId: id,
-    amount: safeInteger.refine((value) => value !== 0),
-    date,
-    note: z.string().max(400),
-    createdAt: timestamp,
-  })
-  .strict();
+// Savings goals were removed in backup version 8. Older backups may still contain goal and
+// reservation lists; they are accepted (bounded) and skipped, never restored.
+const legacyGoalRows = z.array(z.unknown()).max(100000).optional();
 const cashMovementSchema = z
   .object({
     id,
@@ -163,6 +143,7 @@ export const backupSchema = z
       z.literal(5),
       z.literal(6),
       z.literal(7),
+      z.literal(8),
     ]),
     exportedAt: timestamp,
     omittedReceiptCount: z.number().int().nonnegative(),
@@ -171,8 +152,8 @@ export const backupSchema = z
     budgets: z.array(budgetSchema).max(10000),
     rules: z.array(ruleSchema).max(10000),
     drafts: z.array(draftSchema).max(100000),
-    goals: z.array(goalSchema).max(10000).optional(),
-    contributions: z.array(contributionSchema).max(100000).optional(),
+    goals: legacyGoalRows,
+    contributions: legacyGoalRows,
     cashMovements: z.array(cashMovementSchema).max(100000).optional(),
     settings: z
       .object({
@@ -184,10 +165,10 @@ export const backupSchema = z
   })
   .strict()
   .superRefine((value, context) => {
-    if (value.version >= 2 && (!value.goals || !value.contributions)) {
+    if (value.version >= 8 && (value.goals || value.contributions)) {
       context.addIssue({
         code: 'custom',
-        message: 'Version 2 and later backups require goals and contributions',
+        message: 'Version 8 backups do not contain savings goals',
       });
     }
     if (
@@ -221,9 +202,11 @@ export const backupSchema = z
       context.addIssue({ code: 'custom', message: 'Version 7 settings require category rules' });
     }
   })
-  .transform((value) => ({
+  .transform(({ goals, contributions: _reservations, ...value }) => ({
     ...value,
-    version: 7 as const,
+    version: 8 as const,
+    // Present only for older backups that contained goals, so the preview can mention them.
+    ...(goals?.length ? { skippedGoalCount: goals.length } : {}),
     settings: { ...value.settings, categoryRules: value.settings.categoryRules ?? [] },
     budgets: value.budgets.map((budget) => ({
       ...budget,
@@ -235,8 +218,6 @@ export const backupSchema = z
       endDate: rule.endDate ?? null,
       timeZone: rule.timeZone ?? null,
     })),
-    goals: value.goals ?? [],
-    contributions: value.contributions ?? [],
     cashMovements: (value.cashMovements ?? []).map((movement) => ({
       ...movement,
       personalEntryId: movement.personalEntryId ?? null,
@@ -284,8 +265,6 @@ export function previewBackup(text: string): PersonalBackup {
     backup.budgets,
     backup.rules,
     backup.drafts,
-    backup.goals,
-    backup.contributions,
     backup.cashMovements,
   ]) {
     if (new Set(rows.map((row) => row.id)).size !== rows.length)
@@ -315,15 +294,6 @@ export function previewBackup(text: string): PersonalBackup {
       )
     )
       throw new Error('Budget references a missing or different-currency account');
-  }
-  for (const goal of backup.goals) {
-    validateGoal(goal, historicalAccounts);
-    if (goalSaved(goal.id, backup.contributions) < 0)
-      throw new Error('Goal releases exceed reserved funds');
-  }
-  for (const contribution of backup.contributions) {
-    if (!backup.goals.some((goal) => goal.id === contribution.goalId))
-      throw new Error('Contribution references a missing goal');
   }
   const activeCashLinks = new Set<string>();
   const activeMatches = new Set<string>();

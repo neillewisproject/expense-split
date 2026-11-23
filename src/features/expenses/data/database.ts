@@ -9,7 +9,6 @@ import * as accountSchema from '@/features/accounts/data/schema';
 import * as budgetSchema from '@/features/budgets/data/schema';
 import * as recurrenceSchema from '@/features/recurrence/data/schema';
 import * as settingsSchema from '@/features/settings/data/schema';
-import * as goalsSchema from '@/features/goals/data/schema';
 import * as groupCashSchema from '@/features/group-cash/data/schema';
 
 const schema = {
@@ -19,7 +18,6 @@ const schema = {
   ...budgetSchema,
   ...recurrenceSchema,
   ...settingsSchema,
-  ...goalsSchema,
   ...groupCashSchema,
 };
 
