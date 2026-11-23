@@ -39,6 +39,7 @@ Additional repository commands (run from the project root):
 npm run check             # typecheck, lint, formatting, and Jest
 npm test -- --runInBand   # unit/component tests
 npm run db:generate       # generate and format bundled SQLite migrations
+npm run test:database     # SQLite upgrades and isolated PostgreSQL/RLS; no live services
 npx expo export --platform android # validate the Android JS bundle, not a device test
 ```
 

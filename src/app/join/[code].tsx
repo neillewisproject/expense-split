@@ -22,15 +22,14 @@ export default function JoinGroupScreen() {
   const queryClient = useQueryClient();
   const loadGroups = useGroupsStore((state) => state.loadGroups);
   const joinMutation = useMutation({
-    mutationFn: () => {
+    mutationFn: (accountId: string) => {
       if (!code) throw new Error('This group invitation is missing its code.');
-      return joinGroupByInvite(code);
+      return joinGroupByInvite(code, accountId);
     },
-    onSuccess: async (_groupId, _variables, _context, _mutation) => {
-      if (user) {
-        await queryClient.invalidateQueries({ queryKey: sharedGroupsQueryKey(user.id) });
-        await loadGroups(user.id);
-      }
+    onSuccess: async (_groupId, accountId) => {
+      if (useGroupsStore.getState().activeUserId !== accountId) return;
+      await queryClient.invalidateQueries({ queryKey: sharedGroupsQueryKey(accountId) });
+      await loadGroups(accountId);
       router.replace('/groups');
     },
   });
@@ -76,7 +75,7 @@ export default function JoinGroupScreen() {
             <Pressable
               accessibilityRole="button"
               disabled={joinMutation.isPending}
-              onPress={() => joinMutation.mutate()}
+              onPress={() => joinMutation.mutate(user.id)}
               style={[styles.button, joinMutation.isPending && styles.disabled]}>
               <ThemedText style={styles.buttonText}>
                 {joinMutation.isPending ? 'Joining…' : 'Join group'}

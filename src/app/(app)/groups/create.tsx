@@ -25,6 +25,7 @@ export default function CreateGroupScreen() {
   const [name, setName] = useState('');
   const [yourName, setYourName] = useState('');
   const [otherMembers, setOtherMembers] = useState('');
+  const [currency, setCurrency] = useState('INR');
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -33,7 +34,7 @@ export default function CreateGroupScreen() {
     setIsSaving(true);
     try {
       const memberNames = [yourName, ...otherMembers.split(/[\n,]/)];
-      const groupId = await createGroup(name, memberNames, user?.id);
+      const groupId = await createGroup(name, memberNames, user?.id, currency.trim().toUpperCase());
       router.replace({ pathname: '/groups/[id]', params: { id: groupId } });
     } catch (createError) {
       setError(createError instanceof Error ? createError.message : 'Could not create this group.');
@@ -61,6 +62,16 @@ export default function CreateGroupScreen() {
             contentContainerStyle={styles.form}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}>
+            <View style={styles.field}>
+              <ThemedText type="smallBold">Fixed base currency (ISO code)</ThemedText>
+              <TextInput
+                accessibilityLabel="Group base currency"
+                autoCapitalize="characters"
+                value={currency}
+                onChangeText={setCurrency}
+                style={inputStyle}
+              />
+            </View>
             <View style={styles.field}>
               <ThemedText type="smallBold">Group name</ThemedText>
               <TextInput

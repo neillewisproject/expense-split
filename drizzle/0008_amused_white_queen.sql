@@ -1,0 +1,1 @@
+ALTER TABLE `personal_group_cash_movements` ADD `personal_entry_id` text;

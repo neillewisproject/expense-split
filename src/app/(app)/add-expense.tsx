@@ -10,9 +10,14 @@ import {
   ExpenseForm,
   createDefaultExpenseValues,
 } from '@/features/expenses/components/expense-form';
-import type { ExpenseFormValues } from '@/features/expenses/domain/expense';
+import {
+  getReceiptUris,
+  parseTags,
+  type ExpenseFormValues,
+} from '@/features/expenses/domain/expense';
 import { deleteReceiptFile, persistReceiptFile } from '@/features/expenses/data/receipt-files';
-import { parseAmount } from '@/features/expenses/domain/money';
+import { amountToInput, parseAmount } from '@/features/expenses/domain/money';
+import { usePersonalStore } from '@/features/accounts/store';
 import { useExpensesStore } from '@/features/expenses/store';
 import { triggerSuccessHaptic } from '@/lib/success-haptics';
 
@@ -24,37 +29,60 @@ export default function AddExpenseScreen() {
   const saveExpense = useExpensesStore((state) => state.saveExpense);
   const [saveError, setSaveError] = useState<string | null>(null);
   const expense = id ? expenses.find((item) => item.id === id) : undefined;
+  const accounts = usePersonalStore((state) => state.accounts);
+  const categories = usePersonalStore((state) => state.categories);
+  const defaultCurrency = usePersonalStore((state) => state.defaultCurrency);
+  const loaded = usePersonalStore((state) => state.loaded);
+  const loadPersonal = usePersonalStore((state) => state.load);
+  const personalError = usePersonalStore((state) => state.error);
 
   useEffect(() => {
     if (id && status === 'idle') void loadExpenses();
   }, [id, loadExpenses, status]);
+  useEffect(() => {
+    if (!loaded) void loadPersonal();
+  }, [loaded, loadPersonal]);
 
-  async function handleSave(values: ExpenseFormValues, receiptUri: string | null) {
+  async function handleSave(values: ExpenseFormValues, receiptUris: string[]) {
     setSaveError(null);
-    const amount = parseAmount(values.amount);
+    const amount = parseAmount(values.amount, values.currency ?? 'INR');
     if (amount === null || amount <= 0) {
       setSaveError('Enter an amount greater than zero with up to 2 decimal places.');
       return;
     }
-    let newReceiptUri: string | null = null;
+    const previousUris = expense ? getReceiptUris(expense) : [];
+    const newUris: string[] = [];
     try {
-      const nextReceiptUri =
-        receiptUri && receiptUri !== expense?.receiptUri
-          ? (newReceiptUri = await persistReceiptFile(receiptUri))
-          : receiptUri;
+      const nextUris: string[] = [];
+      for (const uri of receiptUris) {
+        if (previousUris.includes(uri)) nextUris.push(uri);
+        else {
+          const persisted = await persistReceiptFile(uri);
+          newUris.push(persisted);
+          nextUris.push(persisted);
+        }
+      }
       await saveExpense(
         {
           description: values.description.trim(),
           amount,
           category: values.category,
           date: values.date,
-          receiptUri: nextReceiptUri,
+          receiptUri: nextUris[0] ?? null,
+          receiptUris: JSON.stringify(nextUris),
+          currency: values.currency ?? 'INR',
+          entryType: values.entryType ?? 'expense',
+          accountId: values.accountId || null,
+          toAccountId: values.toAccountId || null,
+          refundOfId: values.refundOfId || null,
+          notes: values.notes ?? '',
+          tags: JSON.stringify(parseTags(values.tags ?? '')),
         },
         id,
       );
-      if (expense?.receiptUri && expense.receiptUri !== nextReceiptUri) {
+      for (const uri of previousUris.filter((uri) => !nextUris.includes(uri))) {
         try {
-          deleteReceiptFile(expense.receiptUri);
+          deleteReceiptFile(uri);
         } catch (error) {
           console.warn(
             'Expense saved, but its previous receipt photo could not be removed.',
@@ -65,9 +93,9 @@ export default function AddExpenseScreen() {
       triggerSuccessHaptic();
       router.back();
     } catch (error) {
-      if (newReceiptUri) {
+      for (const uri of newUris) {
         try {
-          deleteReceiptFile(newReceiptUri);
+          deleteReceiptFile(uri);
         } catch (cleanupError) {
           console.warn('Could not remove an unsaved receipt photo.', cleanupError);
         }
@@ -102,11 +130,18 @@ export default function AddExpenseScreen() {
   const initialValues: ExpenseFormValues = expense
     ? {
         description: expense.description,
-        amount: (expense.amount / 100).toFixed(2),
+        amount: amountToInput(expense.amount, expense.currency ?? 'INR'),
         category: expense.category as ExpenseFormValues['category'],
         date: expense.date,
+        currency: expense.currency ?? 'INR',
+        entryType: expense.entryType ?? 'expense',
+        accountId: expense.accountId ?? '',
+        toAccountId: expense.toAccountId ?? '',
+        refundOfId: expense.refundOfId ?? '',
+        notes: expense.notes ?? '',
+        tags: (JSON.parse(expense.tags ?? '[]') as string[]).join(', '),
       }
-    : createDefaultExpenseValues();
+    : { ...createDefaultExpenseValues(), currency: defaultCurrency };
 
   return (
     <ThemedView style={styles.container}>
@@ -119,11 +154,14 @@ export default function AddExpenseScreen() {
           <View style={styles.headerSpacer} />
         </View>
         <ExpenseForm
-          key={id ?? 'new-expense'}
+          key={id ?? `new-expense-${defaultCurrency}`}
           initialValues={initialValues}
-          initialReceiptUri={expense?.receiptUri}
+          initialReceiptUris={expense ? getReceiptUris(expense) : []}
           onSave={handleSave}
-          saveError={saveError}
+          saveError={saveError ?? personalError}
+          accounts={accounts}
+          customCategories={categories}
+          originalExpenses={expenses}
           submitLabel={id ? 'Save changes' : 'Save expense'}
         />
       </SafeAreaView>

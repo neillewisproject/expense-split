@@ -1,8 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Image } from 'expo-image';
-import * as ImagePicker from 'expo-image-picker';
 import { useState } from 'react';
-import { Controller, useForm } from 'react-hook-form';
+import { Controller, useForm, useWatch } from 'react-hook-form';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -17,57 +15,52 @@ import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import {
   EXPENSE_CATEGORIES,
-  EXPENSE_CATEGORY_LABELS,
   expenseFormSchema,
   type ExpenseFormValues,
+  type ExpenseFormRawValues,
+  categoryLabel,
 } from '@/features/expenses/domain/expense';
 import { useTheme } from '@/hooks/use-theme';
+import type { Account } from '@/features/accounts/data/schema';
+import type { StoredExpense } from '../data/schema';
+import { ReceiptPicker } from '@/features/receipts/components/receipt-picker';
 
 type ExpenseFormProps = {
   initialValues: ExpenseFormValues;
-  initialReceiptUri?: string | null;
+  initialReceiptUris?: string[];
   submitLabel: string;
   saveError: string | null;
-  onSave: (values: ExpenseFormValues, receiptUri: string | null) => Promise<void>;
+  onSave: (values: ExpenseFormValues, receiptUris: string[]) => Promise<void>;
+  accounts?: Account[];
+  customCategories?: string[];
+  originalExpenses?: StoredExpense[];
 };
 
 export function ExpenseForm({
   initialValues,
-  initialReceiptUri = null,
+  initialReceiptUris = [],
   submitLabel,
   saveError,
   onSave,
+  accounts = [],
+  customCategories = [],
+  originalExpenses = [],
 }: ExpenseFormProps) {
   const theme = useTheme();
-  const [receiptUri, setReceiptUri] = useState(initialReceiptUri);
-  const [receiptError, setReceiptError] = useState<string | null>(null);
+  const [receiptUris, setReceiptUris] = useState(initialReceiptUris);
   const {
     control,
     handleSubmit,
+    setValue,
     formState: { isSubmitting },
-  } = useForm<ExpenseFormValues>({
+  } = useForm<ExpenseFormRawValues, unknown, ExpenseFormValues>({
     resolver: zodResolver(expenseFormSchema),
     defaultValues: initialValues,
   });
+  const entryType = useWatch({ control, name: 'entryType' });
+  const currency = useWatch({ control, name: 'currency' });
 
   const inputStyle = [styles.input, { color: theme.text, borderColor: theme.backgroundSelected }];
-
-  async function pickReceipt() {
-    setReceiptError(null);
-    try {
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ['images'],
-        allowsEditing: true,
-        aspect: [4, 3],
-        quality: 0.8,
-      });
-      if (!result.canceled && result.assets[0]) setReceiptUri(result.assets[0].uri);
-    } catch (error) {
-      setReceiptError(
-        error instanceof Error ? error.message : 'Could not open the photo library. Try again.',
-      );
-    }
-  }
 
   return (
     <KeyboardAvoidingView
@@ -77,6 +70,139 @@ export function ExpenseForm({
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}>
+        <View style={styles.field}>
+          <ThemedText type="smallBold">Transaction type</ThemedText>
+          <Controller
+            control={control}
+            name="entryType"
+            render={({ field }) => (
+              <View style={styles.categories}>
+                {(['expense', 'income', 'refund', 'transfer'] as const).map((type) => (
+                  <Pressable
+                    key={type}
+                    accessibilityRole="radio"
+                    accessibilityState={{ checked: (field.value ?? 'expense') === type }}
+                    onPress={() => {
+                      field.onChange(type);
+                      setValue('toAccountId', '');
+                      setValue('refundOfId', '');
+                    }}
+                    style={styles.categoryButton}>
+                    <ThemedText>
+                      {(field.value ?? 'expense') === type ? '● ' : '○ '}
+                      {type}
+                    </ThemedText>
+                  </Pressable>
+                ))}
+              </View>
+            )}
+          />
+        </View>
+        <View style={styles.field}>
+          <ThemedText type="smallBold">Currency (ISO code)</ThemedText>
+          <Controller
+            control={control}
+            name="currency"
+            render={({ field, fieldState }) => (
+              <>
+                <TextInput
+                  accessibilityLabel="Currency"
+                  style={inputStyle}
+                  autoCapitalize="characters"
+                  maxLength={3}
+                  value={field.value ?? 'INR'}
+                  onChangeText={(value) => field.onChange(value.toUpperCase())}
+                />
+                {fieldState.error ? (
+                  <ThemedText accessibilityRole="alert">{fieldState.error.message}</ThemedText>
+                ) : null}
+              </>
+            )}
+          />
+        </View>
+        {(
+          ['accountId', ...(entryType === 'transfer' ? ['toAccountId'] : [])] as (
+            'accountId' | 'toAccountId'
+          )[]
+        ).map((name) => (
+          <View key={name} style={styles.field}>
+            <ThemedText type="smallBold">
+              {name === 'accountId' ? 'Account (optional except transfers)' : 'Destination account'}
+            </ThemedText>
+            <Controller
+              control={control}
+              name={name}
+              render={({ field, fieldState }) => (
+                <>
+                  <View style={styles.categories}>
+                    <Pressable
+                      accessibilityRole="button"
+                      style={styles.categoryButton}
+                      onPress={() => field.onChange('')}>
+                      <ThemedText>{!field.value ? '● ' : ''}Unassigned</ThemedText>
+                    </Pressable>
+                    {accounts
+                      .filter((account) => !account.archived)
+                      .map((account) => (
+                        <Pressable
+                          key={account.id}
+                          accessibilityRole="button"
+                          style={styles.categoryButton}
+                          onPress={() => {
+                            field.onChange(account.id);
+                            if (name === 'accountId') setValue('currency', account.currency);
+                          }}>
+                          <ThemedText>
+                            {field.value === account.id ? '● ' : ''}
+                            {account.name} ({account.currency})
+                          </ThemedText>
+                        </Pressable>
+                      ))}
+                  </View>
+                  {fieldState.error ? (
+                    <ThemedText accessibilityRole="alert">{fieldState.error.message}</ThemedText>
+                  ) : null}
+                </>
+              )}
+            />
+          </View>
+        ))}
+        {entryType === 'refund' ? (
+          <View style={styles.field}>
+            <ThemedText type="smallBold">Original expense</ThemedText>
+            <Controller
+              control={control}
+              name="refundOfId"
+              render={({ field, fieldState }) => (
+                <>
+                  {originalExpenses
+                    .filter(
+                      (entry) => !entry.deletedAt && (entry.entryType ?? 'expense') === 'expense',
+                    )
+                    .map((entry) => (
+                      <Pressable
+                        key={entry.id}
+                        accessibilityRole="button"
+                        style={styles.categoryButton}
+                        onPress={() => {
+                          field.onChange(entry.id);
+                          setValue('category', entry.category);
+                          setValue('currency', entry.currency ?? 'INR');
+                        }}>
+                        <ThemedText>
+                          {field.value === entry.id ? '● ' : ''}
+                          {entry.date} · {entry.description}
+                        </ThemedText>
+                      </Pressable>
+                    ))}
+                  {fieldState.error ? (
+                    <ThemedText accessibilityRole="alert">{fieldState.error.message}</ThemedText>
+                  ) : null}
+                </>
+              )}
+            />
+          </View>
+        ) : null}
         <View style={styles.field}>
           <ThemedText type="smallBold">Description</ThemedText>
           <Controller
@@ -107,7 +233,7 @@ export function ExpenseForm({
         </View>
 
         <View style={styles.field}>
-          <ThemedText type="smallBold">Amount (₹)</ThemedText>
+          <ThemedText type="smallBold">Amount ({currency ?? 'INR'})</ThemedText>
           <Controller
             control={control}
             name="amount"
@@ -140,12 +266,15 @@ export function ExpenseForm({
             name="category"
             render={({ field }) => (
               <View style={styles.categories}>
-                {EXPENSE_CATEGORIES.map((category) => {
+                {[
+                  ...EXPENSE_CATEGORIES,
+                  ...customCategories.map((name) => `custom:${name}` as const),
+                ].map((category) => {
                   const selected = field.value === category;
                   return (
                     <Pressable
                       accessibilityRole="radio"
-                      accessibilityLabel={EXPENSE_CATEGORY_LABELS[category]}
+                      accessibilityLabel={categoryLabel(category)}
                       accessibilityState={{ checked: selected }}
                       key={category}
                       onPress={() => field.onChange(category)}
@@ -156,7 +285,7 @@ export function ExpenseForm({
                         },
                       ]}>
                       <ThemedText style={selected ? styles.selectedCategoryText : undefined}>
-                        {EXPENSE_CATEGORY_LABELS[category]}
+                        {categoryLabel(category)}
                       </ThemedText>
                     </Pressable>
                   );
@@ -166,6 +295,31 @@ export function ExpenseForm({
           />
         </View>
 
+        {(['notes', 'tags'] as const).map((name) => (
+          <View key={name} style={styles.field}>
+            <ThemedText type="smallBold">
+              {name === 'notes' ? 'Notes' : 'Tags (comma separated)'}
+            </ThemedText>
+            <Controller
+              control={control}
+              name={name}
+              render={({ field, fieldState }) => (
+                <>
+                  <TextInput
+                    accessibilityLabel={name === 'notes' ? 'Notes' : 'Tags'}
+                    style={inputStyle}
+                    value={field.value ?? ''}
+                    onChangeText={field.onChange}
+                    multiline={name === 'notes'}
+                  />
+                  {fieldState.error ? (
+                    <ThemedText accessibilityRole="alert">{fieldState.error.message}</ThemedText>
+                  ) : null}
+                </>
+              )}
+            />
+          </View>
+        ))}
         <View style={styles.field}>
           <ThemedText type="smallBold">Date</ThemedText>
           <Controller
@@ -192,42 +346,7 @@ export function ExpenseForm({
           />
         </View>
 
-        <View style={styles.field}>
-          <ThemedText type="smallBold">Receipt photo</ThemedText>
-          {receiptUri ? (
-            <Image
-              accessibilityLabel="Selected receipt photo"
-              contentFit="contain"
-              source={{ uri: receiptUri }}
-              style={styles.receiptImage}
-              transition={150}
-            />
-          ) : null}
-          <View style={styles.receiptActions}>
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => void pickReceipt()}
-              style={styles.receiptButton}>
-              <ThemedText type="smallBold">
-                {receiptUri ? 'Change receipt photo' : 'Add receipt photo'}
-              </ThemedText>
-            </Pressable>
-            {receiptUri ? (
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Remove receipt photo"
-                onPress={() => setReceiptUri(null)}
-                style={styles.receiptButton}>
-                <ThemedText type="smallBold">Remove</ThemedText>
-              </Pressable>
-            ) : null}
-          </View>
-          {receiptError ? (
-            <ThemedText accessibilityRole="alert" style={styles.fieldError}>
-              {receiptError}
-            </ThemedText>
-          ) : null}
-        </View>
+        <ReceiptPicker uris={receiptUris} onChange={setReceiptUris} persistFiles={false} />
 
         {saveError ? (
           <ThemedText accessibilityRole="alert" style={styles.fieldError}>
@@ -238,7 +357,7 @@ export function ExpenseForm({
         <Pressable
           accessibilityRole="button"
           disabled={isSubmitting}
-          onPress={() => void handleSubmit((values) => onSave(values, receiptUri))()}
+          onPress={() => handleSubmit((values) => onSave(values, receiptUris))()}
           style={[styles.submitButton, isSubmitting && styles.disabledButton]}>
           <ThemedText style={styles.submitButtonText}>
             {isSubmitting ? 'Saving…' : submitLabel}
@@ -283,24 +402,6 @@ const styles = StyleSheet.create({
   selectedCategoryText: {
     color: '#ffffff',
     fontWeight: '700',
-  },
-  receiptImage: {
-    width: '100%',
-    height: 190,
-    borderRadius: Spacing.two,
-  },
-  receiptActions: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: Spacing.two,
-  },
-  receiptButton: {
-    minHeight: 48,
-    justifyContent: 'center',
-    borderRadius: Spacing.two,
-    backgroundColor: '#3c87f7',
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.two,
   },
   submitButton: {
     alignItems: 'center',

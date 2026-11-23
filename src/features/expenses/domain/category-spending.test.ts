@@ -33,4 +33,18 @@ describe('getCategorySpending', () => {
   it('returns no categories when the month has no expenses', () => {
     expect(getCategorySpending([expense], '2026-02')).toEqual([]);
   });
+  it('keeps refund credits signed and excludes income, transfers, trash and other currencies', () => {
+    expect(
+      getCategorySpending(
+        [
+          { ...expense, id: 'refund', entryType: 'refund', amount: 500, refundOfId: 'old' },
+          { ...expense, id: 'income', entryType: 'income' },
+          { ...expense, id: 'transfer', entryType: 'transfer' },
+          { ...expense, id: 'trash', deletedAt: expense.createdAt },
+          { ...expense, id: 'usd', currency: 'USD' },
+        ],
+        '2026-03',
+      ),
+    ).toEqual([{ category: 'food', amount: -500 }]);
+  });
 });

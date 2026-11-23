@@ -26,6 +26,14 @@ export function GroupCloudSync() {
     [groups, user?.id],
   );
   const pendingKey = pendingIds.join('|');
+  const pendingVersion = useMemo(
+    () =>
+      groups
+        .filter((group) => group.syncStatus === 'pending' && group.syncUserId === user?.id)
+        .map((group) => `${group.id}:${group.localRevision}`)
+        .join('|'),
+    [groups, user?.id],
+  );
   const retryVersion = useGroupsStore((state) => state.syncRetry);
   const lastSyncError = useGroupsStore((state) => state.setSyncError);
   const loadGroups = useGroupsStore((state) => state.loadGroups);
@@ -39,13 +47,17 @@ export function GroupCloudSync() {
   });
 
   const syncMutation = useMutation({
-    mutationFn: (groupId: string) => syncGroupSnapshot(userId!, groupId),
-    onSuccess: async (inviteCode, groupId) => {
-      await useGroupsStore.getState().markGroupSynced(groupId, inviteCode);
-      await queryClient.invalidateQueries({ queryKey: sharedGroupsQueryKey(userId!) });
+    mutationFn: ({ groupId, accountId }: { groupId: string; accountId: string }) =>
+      syncGroupSnapshot(accountId, groupId),
+    onSuccess: async (_inviteCode, { accountId }) => {
+      if (useGroupsStore.getState().activeUserId !== accountId) return;
+      await loadGroups(accountId);
+      await queryClient.invalidateQueries({ queryKey: sharedGroupsQueryKey(accountId) });
       lastSyncError(null);
     },
-    onError: (error) => {
+    onError: async (error, { accountId }) => {
+      if (useGroupsStore.getState().activeUserId !== accountId) return;
+      await loadGroups(accountId);
       lastSyncError(`A group is saved on this device but has not synced: ${error.message}`);
     },
   });
@@ -58,7 +70,9 @@ export function GroupCloudSync() {
   useEffect(() => {
     if (!userId || !cloudGroups.data) return;
     void cacheRemoteGroups(cloudGroups.data, userId)
-      .then(() => loadGroups(userId))
+      .then(() => {
+        if (useGroupsStore.getState().activeUserId === userId) return loadGroups(userId);
+      })
       .catch((error: unknown) => {
         lastSyncError(
           `Could not save shared groups on this device: ${
@@ -80,9 +94,22 @@ export function GroupCloudSync() {
     for (const groupId of pendingKey ? pendingKey.split('|') : []) {
       if (activeSyncs.current.has(groupId)) continue;
       activeSyncs.current.add(groupId);
-      mutateSyncGroup(groupId, {
-        onSettled: () => activeSyncs.current.delete(groupId),
-      });
+      mutateSyncGroup(
+        { groupId, accountId: userId },
+        {
+          onSettled: (_data, error) => {
+            activeSyncs.current.delete(groupId);
+            const state = useGroupsStore.getState();
+            if (
+              !error &&
+              state.activeUserId === userId &&
+              state.groups.some((group) => group.id === groupId && group.syncStatus === 'pending')
+            ) {
+              state.retryPendingSync();
+            }
+          },
+        },
+      );
     }
   }, [
     isConfigured,
@@ -90,6 +117,7 @@ export function GroupCloudSync() {
     network.isConnected,
     network.isInternetReachable,
     pendingKey,
+    pendingVersion,
     retryVersion,
     userId,
   ]);

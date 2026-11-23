@@ -1,4 +1,4 @@
-import type { MinorUnits } from './money';
+import { assertMinorUnits, type MinorUnits } from './money';
 import type { MemberId, Split } from './split';
 
 export type Expense = {
@@ -8,6 +8,9 @@ export type Expense = {
   paidBy: MemberId;
   split: Split;
   createdAt: string;
+  contributions?: Split;
+  kind?: 'expense' | 'settlement' | 'refund';
+  deletedAt?: string | null;
 };
 
 export type DebtSettlement = {
@@ -24,9 +27,31 @@ export function computeBalances(expenses: Expense[]): Record<MemberId, MinorUnit
   const balances: Record<MemberId, MinorUnits> = {};
 
   for (const expense of expenses) {
-    balances[expense.paidBy] = (balances[expense.paidBy] ?? 0) + expense.amount;
+    if (expense.deletedAt) continue;
+    assertMinorUnits(expense.amount);
+    const contributions = expense.contributions ?? { [expense.paidBy]: expense.amount };
+    const sumParts = (parts: Split) =>
+      Object.values(parts).reduce((sum, value) => {
+        assertMinorUnits(value);
+        if (value < 0) throw new Error('Contributions and shares cannot be negative');
+        return sum + BigInt(value);
+      }, 0n);
+    if (
+      expense.amount <= 0 ||
+      sumParts(contributions) !== BigInt(expense.amount) ||
+      sumParts(expense.split) !== BigInt(expense.amount)
+    )
+      throw new Error('Paid and owed allocations must equal the expense total');
+    const sign = expense.kind === 'refund' ? -1 : 1;
+    for (const [memberId, paid] of Object.entries(contributions)) {
+      assertMinorUnits(paid);
+      balances[memberId] = (balances[memberId] ?? 0) + sign * paid;
+      assertMinorUnits(balances[memberId]);
+    }
     for (const [memberId, owed] of Object.entries(expense.split)) {
-      balances[memberId] = (balances[memberId] ?? 0) - owed;
+      assertMinorUnits(owed);
+      balances[memberId] = (balances[memberId] ?? 0) - sign * owed;
+      assertMinorUnits(balances[memberId]);
     }
   }
 
@@ -39,7 +64,7 @@ export function simplifyDebts(balances: Record<MemberId, MinorUnits>): DebtSettl
   if (entries.some(([, amount]) => !Number.isSafeInteger(amount))) {
     throw new Error('Balances must be safe integer minor units');
   }
-  if (entries.reduce((total, [, amount]) => total + amount, 0) !== 0) {
+  if (entries.reduce((total, [, amount]) => total + BigInt(amount), 0n) !== 0n) {
     throw new Error('Balances must sum to zero');
   }
 

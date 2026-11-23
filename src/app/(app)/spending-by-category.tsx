@@ -8,12 +8,13 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import type { ExpenseCategory } from '@/features/expenses/domain/expense';
-import { EXPENSE_CATEGORY_LABELS } from '@/features/expenses/domain/expense';
+import { categoryLabel } from '@/features/expenses/domain/expense';
 import { getCategorySpending } from '@/features/expenses/domain/category-spending';
 import { formatMoney } from '@/features/expenses/domain/money';
 import { useExpensesStore } from '@/features/expenses/store';
+import { safeSum } from '@/features/expenses/domain/ledger';
 
-const categoryColors: Record<ExpenseCategory, string> = {
+const categoryColors: Partial<Record<ExpenseCategory, string>> = {
   food: '#f97316',
   transport: '#0ea5e9',
   shopping: '#8b5cf6',
@@ -31,8 +32,17 @@ export default function SpendingByCategoryScreen() {
   const expenses = useExpensesStore((state) => state.expenses);
   const status = useExpensesStore((state) => state.status);
   const loadExpenses = useExpensesStore((state) => state.loadExpenses);
-  const data = getCategorySpending(expenses, getCurrentMonth());
-  const total = data.reduce((sum, item) => sum + item.amount, 0);
+  let data: ReturnType<typeof getCategorySpending> = [];
+  let total = 0;
+  let positiveTotal = 0;
+  let calculationError: string | null = null;
+  try {
+    data = getCategorySpending(expenses, getCurrentMonth());
+    total = safeSum(data.map((item) => item.amount));
+    positiveTotal = safeSum(data.filter((item) => item.amount > 0).map((item) => item.amount));
+  } catch (error) {
+    calculationError = error instanceof Error ? error.message : 'Could not calculate totals';
+  }
   const monthLabel = new Date().toLocaleDateString('en-IN', {
     month: 'long',
     year: 'numeric',
@@ -53,9 +63,17 @@ export default function SpendingByCategoryScreen() {
           <ThemedText type="linkPrimary">‹ Expenses</ThemedText>
         </Pressable>
         <ThemedText type="subtitle">Spending by category</ThemedText>
-        <ThemedText themeColor="textSecondary">{monthLabel}</ThemedText>
+        <ThemedText themeColor="textSecondary">
+          {monthLabel} · INR only · net personal spending
+        </ThemedText>
+        <ThemedText>
+          Net spending: {calculationError ? 'unavailable' : formatMoney(total)}. Chart shows
+          positive category balances; refund credits are listed separately.
+        </ThemedText>
 
-        {status === 'loading' && expenses.length === 0 ? (
+        {calculationError ? (
+          <ThemedText accessibilityRole="alert">{calculationError}</ThemedText>
+        ) : status === 'loading' && expenses.length === 0 ? (
           <ThemedText themeColor="textSecondary">Loading expenses…</ThemedText>
         ) : status === 'error' && expenses.length === 0 ? (
           <ThemedView type="backgroundElement" style={styles.emptyCard}>
@@ -77,50 +95,57 @@ export default function SpendingByCategoryScreen() {
         ) : (
           <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
             <ThemedView type="backgroundElement" style={styles.chartCard}>
-              <View
-                accessibilityElementsHidden
-                importantForAccessibility="no-hide-descendants"
-                style={styles.chart}>
-                <PieChart
-                  data={data.map((item) => ({
-                    value: item.amount,
-                    color: categoryColors[item.category],
-                  }))}
-                  donut
-                  innerRadius={66}
-                  radius={112}
-                  centerLabelComponent={() => (
-                    <View style={styles.centerLabel}>
-                      <ThemedText type="small" themeColor="textSecondary">
-                        Total
-                      </ThemedText>
-                      <ThemedText type="smallBold">{formatMoney(total)}</ThemedText>
-                    </View>
-                  )}
-                />
-              </View>
+              {positiveTotal > 0 ? (
+                <View
+                  accessibilityElementsHidden
+                  importantForAccessibility="no-hide-descendants"
+                  style={styles.chart}>
+                  <PieChart
+                    data={data
+                      .filter((item) => item.amount > 0)
+                      .map((item) => ({
+                        value: item.amount,
+                        color: categoryColors[item.category] ?? '#64748b',
+                      }))}
+                    donut
+                    innerRadius={66}
+                    radius={112}
+                    centerLabelComponent={() => (
+                      <View style={styles.centerLabel}>
+                        <ThemedText type="small" themeColor="textSecondary">
+                          Positive categories
+                        </ThemedText>
+                        <ThemedText type="smallBold">{formatMoney(positiveTotal)}</ThemedText>
+                      </View>
+                    )}
+                  />
+                </View>
+              ) : null}
 
               <View style={styles.legend}>
                 {data.map((item) => {
-                  const percentage = Math.round((item.amount / total) * 100);
+                  const percentage =
+                    item.amount > 0 && positiveTotal > 0
+                      ? Math.round((item.amount / positiveTotal) * 100)
+                      : 0;
                   return (
                     <View
                       accessible
-                      accessibilityLabel={`${EXPENSE_CATEGORY_LABELS[item.category]}, ${percentage} percent, ${formatMoney(item.amount)}`}
+                      accessibilityLabel={`${categoryLabel(item.category)}, ${item.amount < 0 ? 'refund credit' : `${percentage} percent`}, ${formatMoney(item.amount)}`}
                       key={item.category}
                       style={styles.legendRow}>
                       <View
                         accessibilityElementsHidden
                         style={[
                           styles.legendSwatch,
-                          { backgroundColor: categoryColors[item.category] },
+                          { backgroundColor: categoryColors[item.category] ?? '#64748b' },
                         ]}
                       />
                       <ThemedText style={styles.categoryName}>
-                        {EXPENSE_CATEGORY_LABELS[item.category]}
+                        {categoryLabel(item.category)}
                       </ThemedText>
                       <ThemedText type="small" themeColor="textSecondary">
-                        {percentage}%
+                        {item.amount < 0 ? 'Refund credit' : `${percentage}%`}
                       </ThemedText>
                       <ThemedText type="smallBold" style={styles.categoryAmount}>
                         {formatMoney(item.amount)}

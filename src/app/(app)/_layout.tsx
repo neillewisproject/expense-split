@@ -1,6 +1,7 @@
 import { Stack } from 'expo-router';
 
 import { GroupCloudSync } from '@/features/groups/components/group-cloud-sync';
+import { AppLockProvider } from '@/features/privacy/app-lock';
 
 export const unstable_settings = {
   anchor: '(tabs)',
@@ -8,7 +9,7 @@ export const unstable_settings = {
 
 export default function AppGroupLayout() {
   return (
-    <>
+    <AppLockProvider>
       <GroupCloudSync />
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(tabs)" />
@@ -18,6 +19,6 @@ export default function AppGroupLayout() {
         <Stack.Screen name="add-expense" options={{ presentation: 'modal' }} />
         <Stack.Screen name="spending-by-category" />
       </Stack>
-    </>
+    </AppLockProvider>
   );
 }

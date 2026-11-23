@@ -1,0 +1,1 @@
+ALTER TABLE `personal_budgets` ADD `basis` text DEFAULT 'personal' NOT NULL;

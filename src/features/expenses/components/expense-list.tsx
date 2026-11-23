@@ -6,7 +6,7 @@ import { EmptyState } from '@/components/empty-state';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import type { StoredExpense } from '@/features/expenses/data/schema';
-import { EXPENSE_CATEGORY_LABELS } from '@/features/expenses/domain/expense';
+import { categoryLabel } from '@/features/expenses/domain/expense';
 import { formatMoney } from '@/features/expenses/domain/money';
 import { useTheme } from '@/hooks/use-theme';
 
@@ -25,7 +25,7 @@ function toListRows(expenses: StoredExpense[]): ExpenseListRow[] {
   let currentDate: string | null = null;
   for (const expense of expenses) {
     if (expense.date !== currentDate) {
-      rows.push({ type: 'day', key: `day-${expense.date}`, date: expense.date });
+      rows.push({ type: 'day', key: `day-${expense.date}-${rows.length}`, date: expense.date });
       currentDate = expense.date;
     }
     rows.push({ type: 'expense', key: expense.id, expense });
@@ -76,15 +76,17 @@ export function ExpenseList({ expenses, onSelect, onDelete }: ExpenseListProps) 
               renderRightActions={() => (
                 <Pressable
                   accessibilityRole="button"
-                  accessibilityLabel={`Delete ${item.expense.description}`}
+                  accessibilityLabel={`${item.expense.deletedAt ? 'Restore' : 'Delete'} ${item.expense.description}`}
                   onPress={() => onDelete(item.expense.id)}
                   style={styles.deleteAction}>
-                  <ThemedText style={styles.deleteText}>Delete</ThemedText>
+                  <ThemedText style={styles.deleteText}>
+                    {item.expense.deletedAt ? 'Restore' : 'Trash'}
+                  </ThemedText>
                 </Pressable>
               )}>
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel={`${item.expense.description}, ${EXPENSE_CATEGORY_LABELS[item.expense.category]}, ${formatMoney(item.expense.amount)}`}
+                accessibilityLabel={`${item.expense.description}, ${categoryLabel(item.expense.category)}, ${formatMoney(item.expense.amount, item.expense.currency ?? 'INR')}`}
                 onPress={() => onSelect(item.expense.id)}
                 style={[styles.row, { backgroundColor: theme.background }]}>
                 <View style={styles.description}>
@@ -92,11 +94,14 @@ export function ExpenseList({ expenses, onSelect, onDelete }: ExpenseListProps) 
                     {item.expense.description}
                   </ThemedText>
                   <ThemedText type="small" themeColor="textSecondary">
-                    {EXPENSE_CATEGORY_LABELS[item.expense.category]}
+                    {categoryLabel(item.expense.category)}
+                  </ThemedText>
+                  <ThemedText type="small" themeColor="textSecondary">
+                    {item.expense.entryType ?? 'expense'}
                   </ThemedText>
                 </View>
                 <ThemedText type="smallBold" style={styles.amount}>
-                  {formatMoney(item.expense.amount)}
+                  {formatMoney(item.expense.amount, item.expense.currency ?? 'INR')}
                 </ThemedText>
               </Pressable>
             </ReanimatedSwipeable>

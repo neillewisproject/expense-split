@@ -90,6 +90,9 @@ export default function GroupsScreen() {
             </Pressable>
           </View>
         ) : null}
+        <Pressable accessibilityRole="button" onPress={() => router.push('/groups/people')}>
+          <ThemedText type="linkPrimary">People · two-person ledgers</ThemedText>
+        </Pressable>
         <FlatList
           data={groups}
           keyExtractor={(group) => group.id}
@@ -114,6 +117,8 @@ export default function GroupsScreen() {
                 <ThemedText type="smallBold">{item.name}</ThemedText>
                 <ThemedText type="small" themeColor="textSecondary">
                   {item.members.length} members · {item.expenses.length} expenses
+                  {item.archivedAt ? ' · Archived' : ''}
+                  {item.syncStatus === 'conflict' ? ' · Conflict: open to resolve' : ''}
                   {item.syncStatus === 'pending'
                     ? ' · Sync pending'
                     : item.syncUserId

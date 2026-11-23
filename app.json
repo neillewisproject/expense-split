@@ -38,10 +38,19 @@
         "expo-image-picker",
         {
           "photosPermission": "Allow Expense Split to attach receipt photos to expenses.",
+          "cameraPermission": "Allow Expense Split to photograph receipts.",
           "microphonePermission": false
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      "expo-notifications",
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Allow Expense Split to unlock your expense records."
+        }
+      ],
+      "expo-sharing"
     ],
     "experiments": {
       "typedRoutes": true,

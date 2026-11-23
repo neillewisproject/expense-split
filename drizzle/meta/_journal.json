@@ -29,6 +29,48 @@
       "when": 1795403264457,
       "tag": "0003_perfect_junta",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1795411502701,
+      "tag": "0004_white_wildside",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1795413907779,
+      "tag": "0005_acoustic_bullseye",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1795416107883,
+      "tag": "0006_minor_tyger_tiger",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1795417397903,
+      "tag": "0007_small_the_executioner",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1795418504930,
+      "tag": "0008_amused_white_queen",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1795419630386,
+      "tag": "0009_shocking_omega_sentinel",
+      "breakpoints": true
     }
   ]
 }

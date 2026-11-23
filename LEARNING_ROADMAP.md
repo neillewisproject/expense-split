@@ -34,9 +34,12 @@ Each milestone adds a feature and teaches the industry-standard tool for that jo
 src/
   app/                 # ROUTES ONLY. Every file is a screen (Expo Router).
     _layout.tsx        #   root stack, theme, modal presentation
-    (tabs)/            #   native Expenses and Groups tabs
-    add-expense.tsx    #   add/edit modal form
-    expenses/[id].tsx  #   expense detail route
+    (app)/             #   protected application routes
+      (tabs)/          #   native Expenses and Groups tabs
+      add-expense.tsx  #   add/edit modal form
+      expenses/[id].tsx #  expense detail route
+    (auth)/            #   sign-in and callback routes
+    join/[code].tsx    #   public invitation entry
   components/          # shared, dumb UI (ThemedText, EmptyState, ...)
   features/            # feature modules: domain logic, stores, feature UI
     expenses/
@@ -206,6 +209,20 @@ Build:
 ## Stretch ideas
 
 Multiple currencies with exchange rates · recurring expenses · CSV export (`expo-sharing`) · home-screen widget · biometric lock (`expo-local-authentication`) · localisation (`expo-localization`).
+
+## Functionality expansion
+
+The prototype now includes a richer personal ledger, accounts, budgets, recurring approval drafts,
+CSV/JSON recovery, savings reservations, budget carryover, multiple receipt photos, advanced
+splits/multiple payers/itemized bills, fixed group exchange rates, linked refunds, partial settlements,
+group spending/settlement breakdowns, explicit account-linked group cash snapshots, zoned recurring schedules with optional end dates and
+unposted-commitment reporting, audited edits, a durable revision-checked operation queue, and
+ownership/invitation/access controls.
+
+Continue learning through the [functionality guide and limitations](./README.md#functionality).
+Native OCR, remote push, continuous personal sync, partial/multiple-transaction group cash matching,
+account/tag-filtered group budgets, and image-complete/group backup still need implementation or integration work. Device and
+live-cloud acceptance remain separate from passing unit tests and bundle exports.
 
 ## Resources
 
