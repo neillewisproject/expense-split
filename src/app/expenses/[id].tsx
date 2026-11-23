@@ -2,6 +2,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect } from 'react';
 import { Alert, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Image } from 'expo-image';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -73,6 +74,15 @@ export default function ExpenseDetailsScreen() {
           <ThemedText type="small" themeColor="textSecondary">
             {formatExpenseDate(expense.date)}
           </ThemedText>
+          {expense.receiptUri ? (
+            <Image
+              accessibilityLabel="Receipt photo"
+              contentFit="contain"
+              source={{ uri: expense.receiptUri }}
+              style={styles.receiptImage}
+              transition={150}
+            />
+          ) : null}
         </ThemedView>
         <View style={styles.actions}>
           <Pressable
@@ -110,6 +120,11 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
     padding: Spacing.four,
     borderRadius: Spacing.four,
+  },
+  receiptImage: {
+    width: '100%',
+    height: 240,
+    borderRadius: Spacing.two,
   },
   actions: {
     gap: Spacing.two,

@@ -3,6 +3,7 @@ import { randomUUID } from 'expo-crypto';
 import { create } from 'zustand';
 
 import { getExpenseDatabase } from './data/database';
+import { deleteReceiptFile } from './data/receipt-files';
 import { expenses, type StoredExpense } from './data/schema';
 import type { ExpenseInput } from './domain/expense';
 
@@ -74,12 +75,23 @@ export const useExpensesStore = create<ExpensesState>((set) => ({
   deleteExpense: async (id) => {
     try {
       const db = await getExpenseDatabase();
+      const [expense] = await db
+        .select({ receiptUri: expenses.receiptUri })
+        .from(expenses)
+        .where(eq(expenses.id, id));
       await db.delete(expenses).where(eq(expenses.id, id));
       const rows = await db
         .select()
         .from(expenses)
         .orderBy(desc(expenses.date), desc(expenses.createdAt));
       set({ expenses: rows, status: 'ready', error: null });
+      if (expense?.receiptUri) {
+        try {
+          deleteReceiptFile(expense.receiptUri);
+        } catch (error) {
+          console.warn('Expense deleted, but its receipt photo could not be removed.', error);
+        }
+      }
     } catch (error) {
       const message = `Could not delete expense: ${errorMessage(error)}`;
       set({ error: message });

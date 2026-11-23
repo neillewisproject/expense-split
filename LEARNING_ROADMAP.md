@@ -155,10 +155,10 @@ Learn:
 
 Build:
 
-- [ ] Animated list insert/delete; haptic feedback on save.
-- [ ] Charts for spending by category (e.g. `victory-native` or `react-native-gifted-charts`).
-- [ ] Attach a receipt photo (`expo-image-picker`), shown with `expo-image`.
-- [ ] Pass an accessibility check with the screen reader (TalkBack/VoiceOver).
+- [x] Animated list insert/delete; haptic feedback on successful save.
+- [x] Charts for spending by category (`react-native-gifted-charts`).
+- [x] Attach a receipt photo (`expo-image-picker`), stored in app documents and shown with `expo-image`.
+- [ ] Validate with a screen reader (TalkBack/VoiceOver) on a device.
 
 ---
 

@@ -8,6 +8,7 @@ export const expenses = sqliteTable('expenses', {
   amount: integer('amount').notNull(),
   category: text('category').$type<ExpenseCategory>().notNull(),
   date: text('date').notNull(),
+  receiptUri: text('receipt_uri'),
   createdAt: text('created_at').notNull(),
   updatedAt: text('updated_at').notNull(),
 });

@@ -18,6 +18,7 @@ import { parseAmount } from '@/features/expenses/domain/money';
 import { splitByShares, splitEqually } from '@/features/expenses/domain/split';
 import { useGroupsStore } from '@/features/groups/store';
 import { useTheme } from '@/hooks/use-theme';
+import { triggerSuccessHaptic } from '@/lib/success-haptics';
 
 type SplitMode = 'equally' | 'shares';
 
@@ -107,6 +108,7 @@ export default function AddGroupExpenseScreen() {
         date,
         kind: 'expense',
       });
+      triggerSuccessHaptic();
       router.back();
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : 'Could not save this expense.');

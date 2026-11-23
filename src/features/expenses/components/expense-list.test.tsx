@@ -1,3 +1,4 @@
+import { View as MockAnimatedView } from 'react-native';
 import { render, screen } from '@testing-library/react-native';
 
 import { Colors } from '@/constants/theme';
@@ -11,6 +12,20 @@ jest.mock('react-native-gesture-handler/ReanimatedSwipeable', () => ({
   default: ({ children }: { children: React.ReactNode }) => children,
 }));
 
+jest.mock('react-native-reanimated', () => {
+  const transition = {
+    duration: () => transition,
+    springify: () => transition,
+  };
+  return {
+    __esModule: true,
+    default: { View: MockAnimatedView },
+    FadeInDown: transition,
+    FadeOutUp: transition,
+    LinearTransition: transition,
+  };
+});
+
 jest.mock('@/hooks/use-theme', () => ({
   useTheme: jest.fn(),
 }));
@@ -22,6 +37,7 @@ describe('ExpenseList', () => {
     amount: 12550,
     category: 'food',
     date: '2026-03-15',
+    receiptUri: null,
     createdAt: '2026-03-15T12:00:00.000Z',
     updatedAt: '2026-03-15T12:00:00.000Z',
   };

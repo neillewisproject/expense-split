@@ -15,6 +15,13 @@
       "when": 1795399302533,
       "tag": "0001_luxuriant_gamma_corps",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1795401530822,
+      "tag": "0002_swift_zuras",
+      "breakpoints": true
     }
   ]
 }

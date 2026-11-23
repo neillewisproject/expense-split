@@ -19,6 +19,7 @@ export default function RootLayout() {
           <Stack.Screen name="groups/[id]" />
           <Stack.Screen name="expenses/[id]" />
           <Stack.Screen name="add-expense" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="spending-by-category" />
         </Stack>
       </ThemeProvider>
     </GestureHandlerRootView>

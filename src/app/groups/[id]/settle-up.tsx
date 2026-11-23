@@ -10,6 +10,7 @@ import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { computeBalances, simplifyDebts } from '@/features/expenses/domain/balances';
 import { formatMoney } from '@/features/expenses/domain/money';
 import { useGroupsStore } from '@/features/groups/store';
+import { triggerSuccessHaptic } from '@/lib/success-haptics';
 
 function getTodayDate(): string {
   const date = new Date();
@@ -59,6 +60,7 @@ export default function SettleUpScreen() {
         date: getTodayDate(),
         kind: 'settlement',
       });
+      triggerSuccessHaptic();
       router.back();
     } catch (error) {
       Alert.alert(

@@ -1,5 +1,6 @@
 import ReanimatedSwipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 import { FlatList, Pressable, StyleSheet, View } from 'react-native';
+import Animated, { FadeInDown, FadeOutUp, LinearTransition } from 'react-native-reanimated';
 
 import { EmptyState } from '@/components/empty-state';
 import { ThemedText } from '@/components/themed-text';
@@ -66,34 +67,40 @@ export function ExpenseList({ expenses, onSelect, onDelete }: ExpenseListProps) 
         }
 
         return (
-          <ReanimatedSwipeable
-            overshootRight={false}
-            renderRightActions={() => (
+          <Animated.View
+            entering={FadeInDown.duration(180)}
+            exiting={FadeOutUp.duration(150)}
+            layout={LinearTransition.springify()}>
+            <ReanimatedSwipeable
+              overshootRight={false}
+              renderRightActions={() => (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={`Delete ${item.expense.description}`}
+                  onPress={() => onDelete(item.expense.id)}
+                  style={styles.deleteAction}>
+                  <ThemedText style={styles.deleteText}>Delete</ThemedText>
+                </Pressable>
+              )}>
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel={`Delete ${item.expense.description}`}
-                onPress={() => onDelete(item.expense.id)}
-                style={styles.deleteAction}>
-                <ThemedText style={styles.deleteText}>Delete</ThemedText>
+                accessibilityLabel={`${item.expense.description}, ${EXPENSE_CATEGORY_LABELS[item.expense.category]}, ${formatMoney(item.expense.amount)}`}
+                onPress={() => onSelect(item.expense.id)}
+                style={[styles.row, { backgroundColor: theme.background }]}>
+                <View style={styles.description}>
+                  <ThemedText type="smallBold" numberOfLines={1}>
+                    {item.expense.description}
+                  </ThemedText>
+                  <ThemedText type="small" themeColor="textSecondary">
+                    {EXPENSE_CATEGORY_LABELS[item.expense.category]}
+                  </ThemedText>
+                </View>
+                <ThemedText type="smallBold" style={styles.amount}>
+                  {formatMoney(item.expense.amount)}
+                </ThemedText>
               </Pressable>
-            )}>
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => onSelect(item.expense.id)}
-              style={[styles.row, { backgroundColor: theme.background }]}>
-              <View style={styles.description}>
-                <ThemedText type="smallBold" numberOfLines={1}>
-                  {item.expense.description}
-                </ThemedText>
-                <ThemedText type="small" themeColor="textSecondary">
-                  {EXPENSE_CATEGORY_LABELS[item.expense.category]}
-                </ThemedText>
-              </View>
-              <ThemedText type="smallBold" style={styles.amount}>
-                {formatMoney(item.expense.amount)}
-              </ThemedText>
-            </Pressable>
-          </ReanimatedSwipeable>
+            </ReanimatedSwipeable>
+          </Animated.View>
         );
       }}
     />

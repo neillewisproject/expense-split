@@ -54,10 +54,23 @@ export default function ExpensesScreen() {
         <ThemedText type="subtitle">Expenses</ThemedText>
 
         <ThemedView type="backgroundElement" style={styles.summary}>
-          <ThemedText type="small" themeColor="textSecondary">
-            Spent this month
-          </ThemedText>
-          <ThemedText type="subtitle">{formatMoney(monthTotal)}</ThemedText>
+          <View style={styles.summaryContent}>
+            <View>
+              <ThemedText type="small" themeColor="textSecondary">
+                Spent this month
+              </ThemedText>
+              <ThemedText type="subtitle">{formatMoney(monthTotal)}</ThemedText>
+            </View>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="View spending by category"
+              onPress={() => router.push('/spending-by-category')}
+              style={styles.chartButton}>
+              <ThemedText type="smallBold" style={styles.chartButtonText}>
+                By category
+              </ThemedText>
+            </Pressable>
+          </View>
         </ThemedView>
 
         {error ? (
@@ -127,9 +140,24 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   summary: {
-    gap: Spacing.one,
     padding: Spacing.four,
     borderRadius: Spacing.four,
+  },
+  summaryContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: Spacing.two,
+  },
+  chartButton: {
+    minHeight: 44,
+    justifyContent: 'center',
+    borderRadius: Spacing.two,
+    backgroundColor: '#3c87f7',
+    paddingHorizontal: Spacing.three,
+  },
+  chartButtonText: {
+    color: '#ffffff',
   },
   error: {
     gap: Spacing.one,

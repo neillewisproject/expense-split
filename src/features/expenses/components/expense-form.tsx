@@ -1,4 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
+import { Image } from 'expo-image';
+import * as ImagePicker from 'expo-image-picker';
+import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import {
   KeyboardAvoidingView,
@@ -22,13 +25,22 @@ import { useTheme } from '@/hooks/use-theme';
 
 type ExpenseFormProps = {
   initialValues: ExpenseFormValues;
+  initialReceiptUri?: string | null;
   submitLabel: string;
   saveError: string | null;
-  onSave: (values: ExpenseFormValues) => Promise<void>;
+  onSave: (values: ExpenseFormValues, receiptUri: string | null) => Promise<void>;
 };
 
-export function ExpenseForm({ initialValues, submitLabel, saveError, onSave }: ExpenseFormProps) {
+export function ExpenseForm({
+  initialValues,
+  initialReceiptUri = null,
+  submitLabel,
+  saveError,
+  onSave,
+}: ExpenseFormProps) {
   const theme = useTheme();
+  const [receiptUri, setReceiptUri] = useState(initialReceiptUri);
+  const [receiptError, setReceiptError] = useState<string | null>(null);
   const {
     control,
     handleSubmit,
@@ -39,6 +51,23 @@ export function ExpenseForm({ initialValues, submitLabel, saveError, onSave }: E
   });
 
   const inputStyle = [styles.input, { color: theme.text, borderColor: theme.backgroundSelected }];
+
+  async function pickReceipt() {
+    setReceiptError(null);
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.8,
+      });
+      if (!result.canceled && result.assets[0]) setReceiptUri(result.assets[0].uri);
+    } catch (error) {
+      setReceiptError(
+        error instanceof Error ? error.message : 'Could not open the photo library. Try again.',
+      );
+    }
+  }
 
   return (
     <KeyboardAvoidingView
@@ -116,6 +145,7 @@ export function ExpenseForm({ initialValues, submitLabel, saveError, onSave }: E
                   return (
                     <Pressable
                       accessibilityRole="radio"
+                      accessibilityLabel={EXPENSE_CATEGORY_LABELS[category]}
                       accessibilityState={{ checked: selected }}
                       key={category}
                       onPress={() => field.onChange(category)}
@@ -162,6 +192,43 @@ export function ExpenseForm({ initialValues, submitLabel, saveError, onSave }: E
           />
         </View>
 
+        <View style={styles.field}>
+          <ThemedText type="smallBold">Receipt photo</ThemedText>
+          {receiptUri ? (
+            <Image
+              accessibilityLabel="Selected receipt photo"
+              contentFit="contain"
+              source={{ uri: receiptUri }}
+              style={styles.receiptImage}
+              transition={150}
+            />
+          ) : null}
+          <View style={styles.receiptActions}>
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => void pickReceipt()}
+              style={styles.receiptButton}>
+              <ThemedText type="smallBold">
+                {receiptUri ? 'Change receipt photo' : 'Add receipt photo'}
+              </ThemedText>
+            </Pressable>
+            {receiptUri ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Remove receipt photo"
+                onPress={() => setReceiptUri(null)}
+                style={styles.receiptButton}>
+                <ThemedText type="smallBold">Remove</ThemedText>
+              </Pressable>
+            ) : null}
+          </View>
+          {receiptError ? (
+            <ThemedText accessibilityRole="alert" style={styles.fieldError}>
+              {receiptError}
+            </ThemedText>
+          ) : null}
+        </View>
+
         {saveError ? (
           <ThemedText accessibilityRole="alert" style={styles.fieldError}>
             {saveError}
@@ -171,7 +238,7 @@ export function ExpenseForm({ initialValues, submitLabel, saveError, onSave }: E
         <Pressable
           accessibilityRole="button"
           disabled={isSubmitting}
-          onPress={() => void handleSubmit(onSave)()}
+          onPress={() => void handleSubmit((values) => onSave(values, receiptUri))()}
           style={[styles.submitButton, isSubmitting && styles.disabledButton]}>
           <ThemedText style={styles.submitButtonText}>
             {isSubmitting ? 'Saving…' : submitLabel}
@@ -216,6 +283,24 @@ const styles = StyleSheet.create({
   selectedCategoryText: {
     color: '#ffffff',
     fontWeight: '700',
+  },
+  receiptImage: {
+    width: '100%',
+    height: 190,
+    borderRadius: Spacing.two,
+  },
+  receiptActions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.two,
+  },
+  receiptButton: {
+    minHeight: 48,
+    justifyContent: 'center',
+    borderRadius: Spacing.two,
+    backgroundColor: '#3c87f7',
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.two,
   },
   submitButton: {
     alignItems: 'center',

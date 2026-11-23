@@ -11,8 +11,10 @@ import {
   createDefaultExpenseValues,
 } from '@/features/expenses/components/expense-form';
 import type { ExpenseFormValues } from '@/features/expenses/domain/expense';
+import { deleteReceiptFile, persistReceiptFile } from '@/features/expenses/data/receipt-files';
 import { parseAmount } from '@/features/expenses/domain/money';
 import { useExpensesStore } from '@/features/expenses/store';
+import { triggerSuccessHaptic } from '@/lib/success-haptics';
 
 export default function AddExpenseScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
@@ -27,25 +29,49 @@ export default function AddExpenseScreen() {
     if (id && status === 'idle') void loadExpenses();
   }, [id, loadExpenses, status]);
 
-  async function handleSave(values: ExpenseFormValues) {
+  async function handleSave(values: ExpenseFormValues, receiptUri: string | null) {
     setSaveError(null);
     const amount = parseAmount(values.amount);
     if (amount === null || amount <= 0) {
       setSaveError('Enter an amount greater than zero with up to 2 decimal places.');
       return;
     }
+    let newReceiptUri: string | null = null;
     try {
+      const nextReceiptUri =
+        receiptUri && receiptUri !== expense?.receiptUri
+          ? (newReceiptUri = await persistReceiptFile(receiptUri))
+          : receiptUri;
       await saveExpense(
         {
           description: values.description.trim(),
           amount,
           category: values.category,
           date: values.date,
+          receiptUri: nextReceiptUri,
         },
         id,
       );
+      if (expense?.receiptUri && expense.receiptUri !== nextReceiptUri) {
+        try {
+          deleteReceiptFile(expense.receiptUri);
+        } catch (error) {
+          console.warn(
+            'Expense saved, but its previous receipt photo could not be removed.',
+            error,
+          );
+        }
+      }
+      triggerSuccessHaptic();
       router.back();
     } catch (error) {
+      if (newReceiptUri) {
+        try {
+          deleteReceiptFile(newReceiptUri);
+        } catch (cleanupError) {
+          console.warn('Could not remove an unsaved receipt photo.', cleanupError);
+        }
+      }
       setSaveError(error instanceof Error ? error.message : 'Could not save this expense.');
     }
   }
@@ -95,6 +121,7 @@ export default function AddExpenseScreen() {
         <ExpenseForm
           key={id ?? 'new-expense'}
           initialValues={initialValues}
+          initialReceiptUri={expense?.receiptUri}
           onSave={handleSave}
           saveError={saveError}
           submitLabel={id ? 'Save changes' : 'Save expense'}

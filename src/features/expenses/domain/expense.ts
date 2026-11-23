@@ -52,4 +52,5 @@ export type ExpenseInput = {
   amount: number;
   category: ExpenseCategory;
   date: string;
+  receiptUri: string | null;
 };
