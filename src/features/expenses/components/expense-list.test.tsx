@@ -84,7 +84,7 @@ describe('ExpenseList', () => {
       );
 
       expect(screen.getByRole('button')).toHaveStyle({
-        backgroundColor: Colors[mode].background,
+        backgroundColor: Colors[mode].card,
       });
       expect(screen.getByText(longDescription)).toHaveProp('numberOfLines', 1);
       expect(screen.getByText('₹125.50')).toHaveStyle({ flexShrink: 0 });

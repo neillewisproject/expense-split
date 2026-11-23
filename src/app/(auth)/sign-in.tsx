@@ -1,11 +1,12 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { MaxContentWidth, Spacing } from '@/constants/theme';
+import { Banner, Button, Card, IconBadge } from '@/components/ui';
+import { Radius, Spacing } from '@/constants/theme';
+import { Field } from '@/features/expenses/components/personal-ui';
 import { useAuth } from '@/features/auth/auth-provider';
 import { useTheme } from '@/hooks/use-theme';
 
@@ -64,101 +65,114 @@ export default function SignInScreen() {
     router.replace('/');
   }
 
-  const inputStyle = [styles.input, { color: theme.text, borderColor: theme.backgroundSelected }];
+  const sendDisabled = !isConfigured || isSending || !email.trim();
 
   return (
-    <ThemedView style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
       <SafeAreaView style={styles.safeArea}>
-        <View style={styles.content}>
-          <ThemedText type="title">Expense Split</ThemedText>
-          <ThemedText type="subtitle">Sign in with email</ThemedText>
-          <ThemedText themeColor="textSecondary">
-            We’ll email you a one-time code. No password required.
-          </ThemedText>
+        <ScrollView
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={styles.content}
+          showsVerticalScrollIndicator={false}>
+          <View style={styles.brand}>
+            <IconBadge icon="wallet" size={64} />
+            <ThemedText type="title" accessibilityRole="header">
+              Expense Split
+            </ThemedText>
+            <ThemedText themeColor="textSecondary" style={styles.center}>
+              Track your spending and split costs with friends.
+            </ThemedText>
+          </View>
+
           {inviteCode ? (
-            <ThemedText type="smallBold">Sign in to accept your group invitation.</ThemedText>
+            <Banner tone="info" message="Sign in to accept your group invitation." />
           ) : null}
           {!isConfigured ? (
-            <ThemedText accessibilityRole="alert" style={styles.error}>
-              Supabase is not configured. Copy .env.example to .env, add your project URL and
-              publishable key, then restart Expo.
-            </ThemedText>
+            <Banner
+              tone="warning"
+              message="Supabase is not configured. Copy .env.example to .env, add your project URL and publishable key, then restart Expo."
+            />
           ) : null}
-          {authError ? (
-            <ThemedText accessibilityRole="alert" style={styles.error}>
-              {authError}
+          {authError ? <Banner tone="danger" message={authError} /> : null}
+
+          <Card>
+            <ThemedText type="heading">Sign in with email</ThemedText>
+            <ThemedText type="small" themeColor="textSecondary">
+              We’ll email you a one-time code. No password required.
             </ThemedText>
-          ) : null}
-          <View style={styles.field}>
-            <ThemedText type="smallBold">Email address</ThemedText>
-            <TextInput
-              accessibilityLabel="Email address"
+            <Field
+              label="Email address"
+              value={email}
+              onChange={setEmail}
+              placeholder="you@example.com"
+              keyboardType="email-address"
               autoCapitalize="none"
               autoComplete="email"
-              keyboardType="email-address"
-              onChangeText={setEmail}
-              placeholder="you@example.com"
-              placeholderTextColor={theme.textSecondary}
-              style={inputStyle}
-              value={email}
             />
-          </View>
-          {message ? (
-            <ThemedText accessibilityRole="alert" style={styles.success}>
-              {message}
-            </ThemedText>
-          ) : null}
-          {error ? (
-            <ThemedText accessibilityRole="alert" style={styles.error}>
-              {error}
-            </ThemedText>
-          ) : null}
-          <Pressable
-            accessibilityRole="button"
-            disabled={!isConfigured || isSending || !email.trim()}
-            onPress={() => void handleSendLink()}
-            style={[
-              codeSent ? styles.secondaryButton : styles.button,
-              (!isConfigured || isSending || !email.trim()) && styles.disabled,
-            ]}>
-            <ThemedText style={codeSent ? styles.secondaryButtonText : styles.buttonText}>
-              {isSending ? 'Sending…' : codeSent ? 'Send a new code' : 'Send sign-in code'}
-            </ThemedText>
-          </Pressable>
-          {codeSent ? (
-            <>
-              <View style={styles.field}>
-                <ThemedText type="smallBold">Code from email</ThemedText>
-                <TextInput
-                  accessibilityLabel="Code from email"
-                  autoComplete="one-time-code"
-                  keyboardType="number-pad"
-                  maxLength={10}
-                  onChangeText={setCode}
-                  placeholder="123456"
-                  placeholderTextColor={theme.textSecondary}
-                  style={inputStyle}
-                  textContentType="oneTimeCode"
-                  value={code}
+            <Button
+              variant={codeSent ? 'secondary' : 'primary'}
+              icon="signIn"
+              label={isSending ? 'Sending…' : codeSent ? 'Send a new code' : 'Send sign-in code'}
+              disabled={sendDisabled}
+              onPress={() => void handleSendLink()}
+            />
+            {codeSent ? (
+              <>
+                <View style={styles.field}>
+                  <ThemedText type="caption" themeColor="textSecondary" style={styles.label}>
+                    Code from email
+                  </ThemedText>
+                  <TextInput
+                    accessibilityLabel="Code from email"
+                    autoComplete="one-time-code"
+                    keyboardType="number-pad"
+                    maxLength={10}
+                    onChangeText={setCode}
+                    placeholder="123456"
+                    placeholderTextColor={theme.textSecondary}
+                    style={[
+                      styles.code,
+                      {
+                        color: theme.text,
+                        backgroundColor: theme.card,
+                        borderColor: theme.border,
+                      },
+                    ]}
+                    textContentType="oneTimeCode"
+                    value={code}
+                  />
+                </View>
+                <Button
+                  label={isVerifying ? 'Verifying…' : 'Sign in'}
+                  disabled={isVerifying || code.trim().length < 6}
+                  onPress={() => void handleVerifyCode()}
                 />
-              </View>
-              <Pressable
-                accessibilityRole="button"
-                disabled={isVerifying || code.trim().length < 6}
-                onPress={() => void handleVerifyCode()}
-                style={[styles.button, (isVerifying || code.trim().length < 6) && styles.disabled]}>
-                <ThemedText style={styles.buttonText}>
-                  {isVerifying ? 'Verifying…' : 'Sign in'}
-                </ThemedText>
-              </Pressable>
-            </>
-          ) : null}
-          <Pressable accessibilityRole="button" onPress={handleContinueAsGuest}>
-            <ThemedText type="linkPrimary">Continue using local-only groups</ThemedText>
-          </Pressable>
-        </View>
+              </>
+            ) : null}
+            {message ? <Banner tone="success" message={message} /> : null}
+            {error ? <Banner tone="danger" message={error} /> : null}
+          </Card>
+
+          <View style={styles.divider}>
+            <View style={[styles.line, { backgroundColor: theme.border }]} />
+            <ThemedText type="caption" themeColor="textSecondary">
+              or
+            </ThemedText>
+            <View style={[styles.line, { backgroundColor: theme.border }]} />
+          </View>
+
+          <Button
+            variant="secondary"
+            label="Continue without an account"
+            accessibilityLabel="Continue using local-only groups"
+            onPress={handleContinueAsGuest}
+          />
+          <ThemedText type="caption" themeColor="textSecondary" style={styles.center}>
+            Everything stays on this device. You can sign in later from More.
+          </ThemedText>
+        </ScrollView>
       </SafeAreaView>
-    </ThemedView>
+    </View>
   );
 }
 
@@ -170,55 +184,28 @@ const styles = StyleSheet.create({
   },
   safeArea: {
     flex: 1,
-    maxWidth: MaxContentWidth,
-    justifyContent: 'center',
-    paddingHorizontal: Spacing.four,
+    maxWidth: 480,
   },
   content: {
+    flexGrow: 1,
+    justifyContent: 'center',
     gap: Spacing.three,
+    padding: Spacing.four,
   },
-  field: {
-    gap: Spacing.one,
-  },
-  input: {
-    minHeight: 48,
+  brand: { alignItems: 'center', gap: Spacing.two, marginBottom: Spacing.two },
+  center: { textAlign: 'center' },
+  field: { gap: Spacing.one },
+  label: { fontWeight: 600 },
+  code: {
+    minHeight: 56,
     borderWidth: 1,
-    borderRadius: Spacing.two,
+    borderRadius: Radius.md,
     paddingHorizontal: Spacing.three,
-    fontSize: 16,
+    fontSize: 24,
+    fontWeight: 700,
+    letterSpacing: 6,
+    textAlign: 'center',
   },
-  button: {
-    minHeight: 52,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: Spacing.three,
-    backgroundColor: '#3c87f7',
-    padding: Spacing.three,
-  },
-  buttonText: {
-    color: '#ffffff',
-    fontWeight: '700',
-  },
-  secondaryButton: {
-    minHeight: 52,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: Spacing.three,
-    borderWidth: 1,
-    borderColor: '#3c87f7',
-    padding: Spacing.three,
-  },
-  secondaryButtonText: {
-    color: '#3c87f7',
-    fontWeight: '700',
-  },
-  disabled: {
-    opacity: 0.55,
-  },
-  error: {
-    color: '#b42318',
-  },
-  success: {
-    color: '#177245',
-  },
+  divider: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
+  line: { flex: 1, height: StyleSheet.hairlineWidth },
 });

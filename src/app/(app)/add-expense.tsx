@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { IconButton } from '@/components/ui';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import {
   ExpenseForm,
@@ -148,10 +149,8 @@ export default function AddExpenseScreen() {
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
-          <Pressable accessibilityRole="button" onPress={() => router.back()}>
-            <ThemedText type="linkPrimary">Cancel</ThemedText>
-          </Pressable>
-          <ThemedText type="smallBold">{id ? 'Edit expense' : 'Add expense'}</ThemedText>
+          <IconButton icon="close" accessibilityLabel="Cancel" onPress={() => router.back()} />
+          <ThemedText type="heading">{id ? 'Edit transaction' : 'New transaction'}</ThemedText>
           <View style={styles.headerSpacer} />
         </View>
         <ExpenseForm
@@ -180,16 +179,16 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     maxWidth: MaxContentWidth,
-    paddingHorizontal: Spacing.four,
-    paddingTop: Spacing.three,
+    paddingHorizontal: Spacing.three,
+    paddingTop: Spacing.two,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: Spacing.four,
+    marginBottom: Spacing.three,
   },
   headerSpacer: {
-    width: 40,
+    width: 42,
   },
 });

@@ -70,7 +70,7 @@ export default function AuthCallbackScreen() {
         {displayError ? (
           <>
             <ThemedText type="subtitle">Sign-in link failed</ThemedText>
-            <ThemedText accessibilityRole="alert" style={styles.error}>
+            <ThemedText accessibilityRole="alert" themeColor="danger">
               {displayError}
             </ThemedText>
             <Pressable accessibilityRole="button" onPress={() => router.replace('/sign-in')}>
@@ -97,8 +97,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: Spacing.three,
     paddingHorizontal: Spacing.four,
-  },
-  error: {
-    color: '#b42318',
   },
 });

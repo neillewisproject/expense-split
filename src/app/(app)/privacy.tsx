@@ -1,10 +1,8 @@
-import { router } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
+import { Banner } from '@/components/ui';
+import { Action, Failure, PersonalPage } from '@/features/expenses/components/personal-ui';
 import { useAppLock } from '@/features/privacy/app-lock';
 
 export default function PrivacyScreen() {
@@ -23,36 +21,32 @@ export default function PrivacyScreen() {
     }
   }
   return (
-    <ThemedView style={{ flex: 1 }}>
-      <SafeAreaView style={{ flex: 1 }}>
-        <ScrollView contentContainerStyle={{ padding: 24, gap: 20 }}>
-          <Pressable accessibilityRole="button" onPress={() => router.back()}>
-            <ThemedText type="linkPrimary">Back</ThemedText>
-          </Pressable>
-          <ThemedText type="subtitle">Privacy and app lock</ThemedText>
-          <ThemedText>App lock: {enabled ? 'enabled' : 'disabled'}</ThemedText>
-          <Pressable accessibilityRole="button" disabled={busy} onPress={() => void toggle()}>
-            <ThemedText type="linkPrimary">
-              {busy ? 'Authenticating…' : `${enabled ? 'Disable' : 'Enable'} device lock`}
-            </ThemedText>
-          </Pressable>
-          {error ? <ThemedText accessibilityRole="alert">{error}</ThemedText> : null}
-          <ThemedText>
-            Device lock hides app content at startup and after backgrounding. It is not database
-            encryption. Your device passcode can be used if biometrics are unavailable. Face ID
-            requires an iOS development build.
-          </ThemedText>
-          <ThemedText>
-            Existing local groups and personal records are not uploaded automatically. Shared groups
-            and explicitly uploaded private backups use Supabase. Receipt photos stay on this device
-            unless you explicitly share them from a saved shared expense.
-          </ThemedText>
-          <ThemedText>
-            File exports can contain financial details. Store them privately. No bank connections,
-            payment processing, or cloud OCR are enabled.
-          </ThemedText>
-        </ScrollView>
-      </SafeAreaView>
-    </ThemedView>
+    <PersonalPage title="Privacy and app lock">
+      <Banner
+        tone={enabled ? 'success' : 'info'}
+        message={`App lock is ${enabled ? 'on' : 'off'}`}
+      />
+      <Action
+        variant="primary"
+        label={busy ? 'Authenticating…' : `${enabled ? 'Disable' : 'Enable'} device lock`}
+        disabled={busy}
+        onPress={() => void toggle()}
+      />
+      {error ? <Failure message={error} /> : null}
+      <ThemedText>
+        Device lock hides app content at startup and after backgrounding. It is not database
+        encryption. Your device passcode can be used if biometrics are unavailable. Face ID requires
+        an iOS development build.
+      </ThemedText>
+      <ThemedText>
+        Existing local groups and personal records are not uploaded automatically. Shared groups and
+        explicitly uploaded private backups use Supabase. Receipt photos stay on this device unless
+        you explicitly share them from a saved shared expense.
+      </ThemedText>
+      <ThemedText>
+        File exports can contain financial details. Store them privately. No bank connections,
+        payment processing, or cloud OCR are enabled.
+      </ThemedText>
+    </PersonalPage>
   );
 }

@@ -1,27 +1,19 @@
 import { router } from 'expo-router';
 import { PieChart } from 'react-native-gifted-charts';
 import { useEffect } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { Banner, Button, Card, ScreenHeader } from '@/components/ui';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
-import type { ExpenseCategory } from '@/features/expenses/domain/expense';
+import { categoryStyle } from '@/features/expenses/components/category-style';
 import { categoryLabel } from '@/features/expenses/domain/expense';
 import { getCategorySpending } from '@/features/expenses/domain/category-spending';
 import { formatMoney } from '@/features/expenses/domain/money';
 import { useExpensesStore } from '@/features/expenses/store';
 import { safeSum } from '@/features/expenses/domain/ledger';
-
-const categoryColors: Partial<Record<ExpenseCategory, string>> = {
-  food: '#f97316',
-  transport: '#0ea5e9',
-  shopping: '#8b5cf6',
-  bills: '#ef4444',
-  entertainment: '#22c55e',
-  other: '#64748b',
-};
 
 function getCurrentMonth(): string {
   const now = new Date();
@@ -55,46 +47,35 @@ export default function SpendingByCategoryScreen() {
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Back to expenses"
-          onPress={() => router.back()}
-          style={styles.backButton}>
-          <ThemedText type="linkPrimary">‹ Expenses</ThemedText>
-        </Pressable>
-        <ThemedText type="subtitle">Spending by category</ThemedText>
-        <ThemedText themeColor="textSecondary">
-          {monthLabel} · INR only · net personal spending
-        </ThemedText>
-        <ThemedText>
+        <ScreenHeader
+          onBack={() => router.back()}
+          title="Spending by category"
+          subtitle={`${monthLabel} · INR only · net personal spending`}
+        />
+        <ThemedText type="small" themeColor="textSecondary">
           Net spending: {calculationError ? 'unavailable' : formatMoney(total)}. Chart shows
           positive category balances; refund credits are listed separately.
         </ThemedText>
 
         {calculationError ? (
-          <ThemedText accessibilityRole="alert">{calculationError}</ThemedText>
+          <Banner tone="danger" message={calculationError} />
         ) : status === 'loading' && expenses.length === 0 ? (
           <ThemedText themeColor="textSecondary">Loading expenses…</ThemedText>
         ) : status === 'error' && expenses.length === 0 ? (
-          <ThemedView type="backgroundElement" style={styles.emptyCard}>
+          <Card>
             <ThemedText type="smallBold">Could not load expenses</ThemedText>
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => void loadExpenses()}
-              style={styles.retryButton}>
-              <ThemedText style={styles.retryButtonText}>Try again</ThemedText>
-            </Pressable>
-          </ThemedView>
+            <Button label="Try again" onPress={() => void loadExpenses()} />
+          </Card>
         ) : data.length === 0 ? (
-          <ThemedView type="backgroundElement" style={styles.emptyCard}>
+          <Card>
             <ThemedText type="smallBold">No spending this month</ThemedText>
             <ThemedText type="small" themeColor="textSecondary">
               Add an expense to see your category breakdown.
             </ThemedText>
-          </ThemedView>
+          </Card>
         ) : (
           <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-            <ThemedView type="backgroundElement" style={styles.chartCard}>
+            <Card style={styles.chartCard}>
               {positiveTotal > 0 ? (
                 <View
                   accessibilityElementsHidden
@@ -105,7 +86,7 @@ export default function SpendingByCategoryScreen() {
                       .filter((item) => item.amount > 0)
                       .map((item) => ({
                         value: item.amount,
-                        color: categoryColors[item.category] ?? '#64748b',
+                        color: categoryStyle(item.category).color,
                       }))}
                     donut
                     innerRadius={66}
@@ -138,7 +119,7 @@ export default function SpendingByCategoryScreen() {
                         accessibilityElementsHidden
                         style={[
                           styles.legendSwatch,
-                          { backgroundColor: categoryColors[item.category] ?? '#64748b' },
+                          { backgroundColor: categoryStyle(item.category).color },
                         ]}
                       />
                       <ThemedText style={styles.categoryName}>
@@ -154,7 +135,7 @@ export default function SpendingByCategoryScreen() {
                   );
                 })}
               </View>
-            </ThemedView>
+            </Card>
           </ScrollView>
         )}
       </SafeAreaView>
@@ -175,18 +156,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.four,
     paddingTop: Spacing.three,
   },
-  backButton: {
-    alignSelf: 'flex-start',
-    minHeight: 44,
-    justifyContent: 'center',
-  },
   content: {
     paddingBottom: Spacing.four,
   },
   chartCard: {
     gap: Spacing.four,
-    padding: Spacing.three,
-    borderRadius: Spacing.four,
   },
   chart: {
     alignItems: 'center',
@@ -217,21 +191,5 @@ const styles = StyleSheet.create({
   categoryAmount: {
     minWidth: 88,
     textAlign: 'right',
-  },
-  emptyCard: {
-    gap: Spacing.two,
-    padding: Spacing.four,
-    borderRadius: Spacing.four,
-  },
-  retryButton: {
-    minHeight: 48,
-    alignSelf: 'flex-start',
-    justifyContent: 'center',
-    borderRadius: Spacing.two,
-    backgroundColor: '#3c87f7',
-    paddingHorizontal: Spacing.three,
-  },
-  retryButtonText: {
-    color: '#ffffff',
   },
 });

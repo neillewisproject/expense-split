@@ -12,7 +12,8 @@ import {
 } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
-import { Spacing } from '@/constants/theme';
+import { Banner, Button, Card, Chip } from '@/components/ui';
+import { Radius, Spacing } from '@/constants/theme';
 import {
   EXPENSE_CATEGORIES,
   expenseFormSchema,
@@ -28,6 +29,7 @@ import {
   suggestedCategoryRule,
   type CategoryRule,
 } from '@/features/settings/domain/category-rules';
+import { categoryStyle } from './category-style';
 
 type ExpenseFormProps = {
   initialValues: ExpenseFormValues;
@@ -40,6 +42,8 @@ type ExpenseFormProps = {
   originalExpenses?: StoredExpense[];
   categoryRules?: CategoryRule[];
 };
+
+const ENTRY_TYPES = ['expense', 'income', 'refund', 'transfer'] as const;
 
 export function ExpenseForm({
   initialValues,
@@ -58,13 +62,12 @@ export function ExpenseForm({
     control,
     handleSubmit,
     setValue,
-    formState: { isSubmitting },
+    formState: { isSubmitting, errors },
   } = useForm<ExpenseFormRawValues, unknown, ExpenseFormValues>({
     resolver: zodResolver(expenseFormSchema),
     defaultValues: initialValues,
   });
   const entryType = useWatch({ control, name: 'entryType' });
-  const currency = useWatch({ control, name: 'currency' });
   const description = useWatch({ control, name: 'description' });
   const selectedCategory = useWatch({ control, name: 'category' });
   const suggestion = suggestedCategoryRule(
@@ -73,7 +76,16 @@ export function ExpenseForm({
     entryType ?? 'expense',
   );
 
-  const inputStyle = [styles.input, { color: theme.text, borderColor: theme.backgroundSelected }];
+  const inputStyle = [
+    styles.input,
+    { color: theme.text, backgroundColor: theme.card, borderColor: theme.border },
+  ];
+  const errorText = (message?: string) =>
+    message ? (
+      <ThemedText type="caption" accessibilityRole="alert" style={{ color: theme.danger }}>
+        {message}
+      </ThemedText>
+    ) : null;
 
   return (
     <KeyboardAvoidingView
@@ -83,141 +95,86 @@ export function ExpenseForm({
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}>
-        <View style={styles.field}>
-          <ThemedText type="smallBold">Transaction type</ThemedText>
-          <Controller
-            control={control}
-            name="entryType"
-            render={({ field }) => (
-              <View style={styles.categories}>
-                {(['expense', 'income', 'refund', 'transfer'] as const).map((type) => (
+        <Controller
+          control={control}
+          name="entryType"
+          render={({ field }) => (
+            <View
+              accessibilityRole="radiogroup"
+              accessibilityLabel="Transaction type"
+              style={[styles.segments, { backgroundColor: theme.backgroundElement }]}>
+              {ENTRY_TYPES.map((type) => {
+                const checked = (field.value ?? 'expense') === type;
+                return (
                   <Pressable
                     key={type}
                     accessibilityRole="radio"
-                    accessibilityState={{ checked: (field.value ?? 'expense') === type }}
+                    accessibilityState={{ checked }}
                     onPress={() => {
                       field.onChange(type);
                       setValue('toAccountId', '');
                       setValue('refundOfId', '');
                     }}
-                    style={styles.categoryButton}>
-                    <ThemedText>
-                      {(field.value ?? 'expense') === type ? '● ' : '○ '}
-                      {type}
+                    style={[styles.segment, checked && { backgroundColor: theme.card }]}>
+                    <ThemedText
+                      type="smallBold"
+                      style={{ color: checked ? theme.accent : theme.textSecondary }}>
+                      {type[0]!.toUpperCase() + type.slice(1)}
                     </ThemedText>
                   </Pressable>
-                ))}
-              </View>
-            )}
-          />
-        </View>
-        <View style={styles.field}>
-          <ThemedText type="smallBold">Currency (ISO code)</ThemedText>
-          <Controller
-            control={control}
-            name="currency"
-            render={({ field, fieldState }) => (
-              <>
+                );
+              })}
+            </View>
+          )}
+        />
+
+        <Card>
+          <ThemedText type="caption" themeColor="textSecondary" style={styles.label}>
+            Amount
+          </ThemedText>
+          <View style={styles.amountRow}>
+            <Controller
+              control={control}
+              name="currency"
+              render={({ field }) => (
                 <TextInput
                   accessibilityLabel="Currency"
-                  style={inputStyle}
                   autoCapitalize="characters"
                   maxLength={3}
                   value={field.value ?? 'INR'}
                   onChangeText={(value) => field.onChange(value.toUpperCase())}
+                  style={[
+                    styles.currency,
+                    { color: theme.accent, backgroundColor: theme.accentSoft },
+                  ]}
                 />
-                {fieldState.error ? (
-                  <ThemedText accessibilityRole="alert">{fieldState.error.message}</ThemedText>
-                ) : null}
-              </>
-            )}
-          />
-        </View>
-        {(
-          ['accountId', ...(entryType === 'transfer' ? ['toAccountId'] : [])] as (
-            'accountId' | 'toAccountId'
-          )[]
-        ).map((name) => (
-          <View key={name} style={styles.field}>
-            <ThemedText type="smallBold">
-              {name === 'accountId' ? 'Account (optional except transfers)' : 'Destination account'}
-            </ThemedText>
+              )}
+            />
             <Controller
               control={control}
-              name={name}
-              render={({ field, fieldState }) => (
-                <>
-                  <View style={styles.categories}>
-                    <Pressable
-                      accessibilityRole="button"
-                      style={styles.categoryButton}
-                      onPress={() => field.onChange('')}>
-                      <ThemedText>{!field.value ? '● ' : ''}Unassigned</ThemedText>
-                    </Pressable>
-                    {accounts
-                      .filter((account) => !account.archived)
-                      .map((account) => (
-                        <Pressable
-                          key={account.id}
-                          accessibilityRole="button"
-                          style={styles.categoryButton}
-                          onPress={() => {
-                            field.onChange(account.id);
-                            if (name === 'accountId') setValue('currency', account.currency);
-                          }}>
-                          <ThemedText>
-                            {field.value === account.id ? '● ' : ''}
-                            {account.name} ({account.currency})
-                          </ThemedText>
-                        </Pressable>
-                      ))}
-                  </View>
-                  {fieldState.error ? (
-                    <ThemedText accessibilityRole="alert">{fieldState.error.message}</ThemedText>
-                  ) : null}
-                </>
+              name="amount"
+              render={({ field }) => (
+                <TextInput
+                  accessibilityLabel="Amount"
+                  keyboardType="decimal-pad"
+                  onBlur={field.onBlur}
+                  onChangeText={field.onChange}
+                  placeholder="0.00"
+                  placeholderTextColor={theme.textSecondary}
+                  style={[styles.amount, { color: theme.text }]}
+                  value={field.value}
+                />
               )}
             />
           </View>
-        ))}
-        {entryType === 'refund' ? (
-          <View style={styles.field}>
-            <ThemedText type="smallBold">Original expense</ThemedText>
-            <Controller
-              control={control}
-              name="refundOfId"
-              render={({ field, fieldState }) => (
-                <>
-                  {originalExpenses
-                    .filter(
-                      (entry) => !entry.deletedAt && (entry.entryType ?? 'expense') === 'expense',
-                    )
-                    .map((entry) => (
-                      <Pressable
-                        key={entry.id}
-                        accessibilityRole="button"
-                        style={styles.categoryButton}
-                        onPress={() => {
-                          field.onChange(entry.id);
-                          setValue('category', entry.category);
-                          setValue('currency', entry.currency ?? 'INR');
-                        }}>
-                        <ThemedText>
-                          {field.value === entry.id ? '● ' : ''}
-                          {entry.date} · {entry.description}
-                        </ThemedText>
-                      </Pressable>
-                    ))}
-                  {fieldState.error ? (
-                    <ThemedText accessibilityRole="alert">{fieldState.error.message}</ThemedText>
-                  ) : null}
-                </>
-              )}
-            />
-          </View>
-        ) : null}
+          {errorText(errors.currency?.message)}
+          {errorText(errors.amount?.message)}
+        </Card>
+
         <View style={styles.field}>
-          <ThemedText type="smallBold">Description</ThemedText>
+          <ThemedText type="caption" themeColor="textSecondary" style={styles.label}>
+            Description
+          </ThemedText>
           <Controller
             control={control}
             name="description"
@@ -235,129 +192,140 @@ export function ExpenseForm({
                   style={inputStyle}
                   value={field.value}
                 />
-                {fieldState.error ? (
-                  <ThemedText accessibilityRole="alert" style={styles.fieldError}>
-                    {fieldState.error.message}
-                  </ThemedText>
-                ) : null}
+                {errorText(fieldState.error?.message)}
               </>
             )}
           />
         </View>
 
         {suggestion ? (
-          <View style={styles.field}>
-            <ThemedText>
-              Description rule “{suggestion.contains}” suggests {categoryLabel(suggestion.category)}
-              . Applying a suggestion is optional and does not save the transaction.
-            </ThemedText>
-            <Pressable
-              accessibilityRole="button"
-              onPress={() =>
-                setValue('category', suggestion.category, {
-                  shouldDirty: true,
-                  shouldValidate: true,
-                })
-              }
-              style={styles.categoryButton}>
-              <ThemedText>Use suggested category: {categoryLabel(suggestion.category)}</ThemedText>
-            </Pressable>
-          </View>
+          <Banner
+            tone="info"
+            message={`Rule “${suggestion.contains}” suggests ${categoryLabel(suggestion.category)}. Nothing changes unless you tap below.`}
+            actionLabel={`Use suggested category: ${categoryLabel(suggestion.category)}`}
+            onAction={() =>
+              setValue('category', suggestion.category, {
+                shouldDirty: true,
+                shouldValidate: true,
+              })
+            }
+          />
         ) : null}
 
         <View style={styles.field}>
-          <ThemedText type="smallBold">Amount ({currency ?? 'INR'})</ThemedText>
-          <Controller
-            control={control}
-            name="amount"
-            render={({ field, fieldState }) => (
-              <>
-                <TextInput
-                  accessibilityLabel="Amount"
-                  keyboardType="decimal-pad"
-                  onBlur={field.onBlur}
-                  onChangeText={field.onChange}
-                  placeholder="0.00"
-                  placeholderTextColor={theme.textSecondary}
-                  style={inputStyle}
-                  value={field.value}
-                />
-                {fieldState.error ? (
-                  <ThemedText accessibilityRole="alert" style={styles.fieldError}>
-                    {fieldState.error.message}
-                  </ThemedText>
-                ) : null}
-              </>
-            )}
-          />
-        </View>
-
-        <View style={styles.field}>
-          <ThemedText type="smallBold">Category</ThemedText>
+          <ThemedText type="caption" themeColor="textSecondary" style={styles.label}>
+            Category
+          </ThemedText>
           <Controller
             control={control}
             name="category"
             render={({ field }) => (
-              <View style={styles.categories}>
+              <View style={styles.chips}>
                 {[
                   ...new Set([
                     ...EXPENSE_CATEGORIES,
                     ...customCategories.map((name) => `custom:${name}` as const),
                     ...(selectedCategory ? [selectedCategory] : []),
                   ]),
-                ].map((category) => {
-                  const selected = field.value === category;
-                  return (
-                    <Pressable
-                      accessibilityRole="radio"
-                      accessibilityLabel={categoryLabel(category)}
-                      accessibilityState={{ checked: selected }}
-                      key={category}
-                      onPress={() => field.onChange(category)}
-                      style={[
-                        styles.categoryButton,
-                        {
-                          backgroundColor: selected ? '#3c87f7' : theme.backgroundElement,
-                        },
-                      ]}>
-                      <ThemedText style={selected ? styles.selectedCategoryText : undefined}>
-                        {categoryLabel(category)}
-                      </ThemedText>
-                    </Pressable>
-                  );
-                })}
+                ].map((category) => (
+                  <Chip
+                    key={category}
+                    label={categoryLabel(category)}
+                    icon={categoryStyle(category).icon}
+                    selected={field.value === category}
+                    onPress={() => field.onChange(category)}
+                  />
+                ))}
               </View>
             )}
           />
         </View>
 
-        {(['notes', 'tags'] as const).map((name) => (
+        {(
+          ['accountId', ...(entryType === 'transfer' ? ['toAccountId'] : [])] as (
+            'accountId' | 'toAccountId'
+          )[]
+        ).map((name) => (
           <View key={name} style={styles.field}>
-            <ThemedText type="smallBold">
-              {name === 'notes' ? 'Notes' : 'Tags (comma separated)'}
+            <ThemedText type="caption" themeColor="textSecondary" style={styles.label}>
+              {name === 'accountId'
+                ? entryType === 'transfer'
+                  ? 'From account'
+                  : 'Account (optional)'
+                : 'To account'}
             </ThemedText>
             <Controller
               control={control}
               name={name}
               render={({ field, fieldState }) => (
                 <>
-                  <TextInput
-                    accessibilityLabel={name === 'notes' ? 'Notes' : 'Tags'}
-                    style={inputStyle}
-                    value={field.value ?? ''}
-                    onChangeText={field.onChange}
-                    multiline={name === 'notes'}
-                  />
-                  {fieldState.error ? (
-                    <ThemedText accessibilityRole="alert">{fieldState.error.message}</ThemedText>
-                  ) : null}
+                  <View style={styles.chips}>
+                    <Chip
+                      label="Unassigned"
+                      selected={!field.value}
+                      onPress={() => field.onChange('')}
+                    />
+                    {accounts
+                      .filter((account) => !account.archived)
+                      .map((account) => (
+                        <Chip
+                          key={account.id}
+                          icon="wallet"
+                          label={`${account.name} (${account.currency})`}
+                          selected={field.value === account.id}
+                          onPress={() => {
+                            field.onChange(account.id);
+                            if (name === 'accountId') setValue('currency', account.currency);
+                          }}
+                        />
+                      ))}
+                  </View>
+                  {errorText(fieldState.error?.message)}
                 </>
               )}
             />
           </View>
         ))}
+
+        {entryType === 'refund' ? (
+          <View style={styles.field}>
+            <ThemedText type="caption" themeColor="textSecondary" style={styles.label}>
+              Original expense
+            </ThemedText>
+            <Controller
+              control={control}
+              name="refundOfId"
+              render={({ field, fieldState }) => (
+                <>
+                  <View style={styles.chips}>
+                    {originalExpenses
+                      .filter(
+                        (entry) => !entry.deletedAt && (entry.entryType ?? 'expense') === 'expense',
+                      )
+                      .map((entry) => (
+                        <Chip
+                          key={entry.id}
+                          label={`${entry.date} · ${entry.description}`}
+                          selected={field.value === entry.id}
+                          onPress={() => {
+                            field.onChange(entry.id);
+                            setValue('category', entry.category);
+                            setValue('currency', entry.currency ?? 'INR');
+                          }}
+                        />
+                      ))}
+                  </View>
+                  {errorText(fieldState.error?.message)}
+                </>
+              )}
+            />
+          </View>
+        ) : null}
+
         <View style={styles.field}>
-          <ThemedText type="smallBold">Date</ThemedText>
+          <ThemedText type="caption" themeColor="textSecondary" style={styles.label}>
+            Date
+          </ThemedText>
           <Controller
             control={control}
             name="date"
@@ -372,33 +340,49 @@ export function ExpenseForm({
                   style={inputStyle}
                   value={field.value}
                 />
-                {fieldState.error ? (
-                  <ThemedText accessibilityRole="alert" style={styles.fieldError}>
-                    {fieldState.error.message}
-                  </ThemedText>
-                ) : null}
+                {errorText(fieldState.error?.message)}
               </>
             )}
           />
         </View>
 
+        {(['notes', 'tags'] as const).map((name) => (
+          <View key={name} style={styles.field}>
+            <ThemedText type="caption" themeColor="textSecondary" style={styles.label}>
+              {name === 'notes' ? 'Notes' : 'Tags (comma separated)'}
+            </ThemedText>
+            <Controller
+              control={control}
+              name={name}
+              render={({ field, fieldState }) => (
+                <>
+                  <TextInput
+                    accessibilityLabel={name === 'notes' ? 'Notes' : 'Tags'}
+                    placeholder={name === 'notes' ? 'Optional' : 'e.g. trip, work'}
+                    placeholderTextColor={theme.textSecondary}
+                    style={[inputStyle, name === 'notes' && styles.notes]}
+                    value={field.value ?? ''}
+                    onChangeText={field.onChange}
+                    multiline={name === 'notes'}
+                  />
+                  {errorText(fieldState.error?.message)}
+                </>
+              )}
+            />
+          </View>
+        ))}
+
         <ReceiptPicker uris={receiptUris} onChange={setReceiptUris} persistFiles={false} />
 
-        {saveError ? (
-          <ThemedText accessibilityRole="alert" style={styles.fieldError}>
-            {saveError}
-          </ThemedText>
-        ) : null}
+        {saveError ? <Banner tone="danger" message={saveError} /> : null}
 
-        <Pressable
-          accessibilityRole="button"
-          disabled={isSubmitting}
+        <Button
+          label={submitLabel}
+          icon="check"
+          loading={isSubmitting}
           onPress={() => handleSubmit((values) => onSave(values, receiptUris))()}
-          style={[styles.submitButton, isSubmitting && styles.disabledButton]}>
-          <ThemedText style={styles.submitButtonText}>
-            {isSubmitting ? 'Saving…' : submitLabel}
-          </ThemedText>
-        </Pressable>
+          style={styles.submit}
+        />
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -415,44 +399,51 @@ const styles = StyleSheet.create({
   field: {
     gap: Spacing.one,
   },
+  label: { fontWeight: 600 },
   input: {
     minHeight: 48,
     borderWidth: 1,
-    borderRadius: Spacing.two,
+    borderRadius: Radius.md,
     paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.two,
     fontSize: 16,
   },
-  fieldError: {
-    color: '#b42318',
+  notes: { minHeight: 80, textAlignVertical: 'top' },
+  segments: {
+    flexDirection: 'row',
+    padding: Spacing.one,
+    borderRadius: Radius.md,
+    gap: Spacing.one,
   },
-  categories: {
+  segment: {
+    flex: 1,
+    minHeight: 38,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: Radius.sm,
+  },
+  amountRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
+  currency: {
+    width: 64,
+    minHeight: 40,
+    textAlign: 'center',
+    fontSize: 16,
+    fontWeight: 700,
+    borderRadius: Radius.sm,
+  },
+  amount: {
+    flex: 1,
+    fontSize: 34,
+    fontWeight: 700,
+    minHeight: 52,
+    paddingVertical: 0,
+  },
+  chips: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: Spacing.two,
   },
-  categoryButton: {
-    borderRadius: Spacing.four,
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.two,
-  },
-  selectedCategoryText: {
-    color: '#ffffff',
-    fontWeight: '700',
-  },
-  submitButton: {
-    alignItems: 'center',
-    borderRadius: Spacing.three,
-    backgroundColor: '#3c87f7',
-    padding: Spacing.three,
-    marginTop: Spacing.two,
-  },
-  submitButtonText: {
-    color: '#ffffff',
-    fontWeight: '700',
-  },
-  disabledButton: {
-    opacity: 0.65,
-  },
+  submit: { marginTop: Spacing.two, minHeight: 52 },
 });
 
 export function createDefaultExpenseValues(): ExpenseFormValues {

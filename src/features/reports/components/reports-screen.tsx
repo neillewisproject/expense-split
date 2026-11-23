@@ -195,7 +195,7 @@ export function ReportsScreen() {
             label="View transactions for these dates"
             onPress={() =>
               router.push({
-                pathname: '/',
+                pathname: '/activity',
                 params: { start: result.period.start, end: result.period.end, currency },
               })
             }

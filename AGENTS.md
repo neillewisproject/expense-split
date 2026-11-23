@@ -7,7 +7,7 @@ Expense Split is a learning application with personal expenses, named group part
 - Read `package.json` for current versions. The stack is Expo, React Native, React, strict TypeScript, Expo Router, Zustand, TanStack Query, Drizzle with expo-sqlite, Supabase Auth/Postgres/Realtime, react-hook-form, Zod, Reanimated, and Gesture Handler.
 - `src/app/` contains routes only. Auth screens are in `(auth)`; application screens and tabs are in `(app)`; invite routes are public.
 - `src/features/*/domain/` contains pure domain logic; `data/` contains persistence; stores expose client state; feature components contain reusable UI.
-- Shared UI, theme tokens, and hooks live in `src/components/`, `src/constants/theme.ts`, and `src/hooks/`. Use the `@/` source alias.
+- Shared UI, theme tokens, and hooks live in `src/components/`, `src/constants/theme.ts`, and `src/hooks/`. Build screens from the design system in `src/components/ui` (Screen, Card, Button, Chip, ListRow, Banner, Sheet, Icon) instead of hard-coded colours. Use the `@/` source alias.
 - SQLite is the local source of truth. Remote groups are cached locally and local changes are queued for upload.
 - Existing local groups remain local. New groups created while signed in belong to that account. Do not automatically upload existing groups.
 - `group_access` represents authenticated users with access; `group_members` represents named expense participants. These are distinct concepts.

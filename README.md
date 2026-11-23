@@ -8,7 +8,15 @@ The original milestones have been expanded with a personal ledger, manual accoun
 
 ## Functionality
 
-Open **Expenses** to find Accounts, Budgets, Reports, Recurring entries, Import / export, Personal settings, Privacy, and Private cloud backup.
+The app has five tabs:
+
+- **Home**: this month's spending, income and net; recurring items awaiting approval; shortcuts; and recent activity.
+- **Activity**: every transaction, with search, a filter sheet, trash/restore and bulk changes.
+- **Groups**: shared and on-device groups, plus two-person balances under **People**.
+- **Insights**: top categories this month, plus the spending breakdown, reports, budgets and savings goals.
+- **More**: sign in or out, accounts, recurring schedules, categories and rules, privacy, import/export and cloud backup.
+
+Screens are built from a small design system: colour, spacing and radius tokens in [`src/constants/theme.ts`](./src/constants/theme.ts), and reusable components in [`src/components/ui`](./src/components/ui). Those components include cards, buttons, chips, list rows, banners, bottom sheets and SF Symbol/Material Symbol icons. Light and dark mode follow the device setting.
 
 | Area                  | Implemented functionality                                                                                                                                                                                                                                                                                                 |
 | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -27,7 +35,7 @@ Cloud receipt uploads require a saved/synced shared expense; open **Shared recei
 
 Open a group and choose **Review shareable summary** to preview names, balances and suggested repayments before opening the device share sheet. Notes, receipt photos and invite links are not included.
 
-In **Personal settings**, add and prioritize literal description-to-category rules for expenses or income. The first match suggests a category in the transaction form; you must tap to apply it. Rules never change existing records, refunds, transfers or recurring drafts automatically.
+In **More → Categories & rules**, add and prioritize literal description-to-category rules for expenses or income. The first match suggests a category in the transaction form; you must tap to apply it. Rules never change existing records, refunds, transfers or recurring drafts automatically.
 
 ### Explicit limitations and follow-ups
 
@@ -36,7 +44,7 @@ In **Personal settings**, add and prioritize literal description-to-category rul
 - Refunds preserve the original payer/share allocation and fixed exchange-rate snapshot; arbitrary item-specific refund overrides and automatic cross-group netting are not implemented. Invitation links remain forwardable bearer links until revoked/expired; accepting them requires sign-in.
 - Group-share consumption is distinct from personal ledger totals. Link cash as a new snapshot, or manually match one existing personal transaction with the same account, currency, amount and direction to avoid counting its account effect twice. Combined budgets subtract matched personal transactions and add your group shares. Unmatched personal entries can still double-count a group expense; review and match them. Combined budgets cannot filter by account/tag and include only locally available groups. Void a match before changing its transaction's accounting fields or deleting it; its transaction remains. Snapshots stay fixed after group edits; void them and record a correction if needed. Partial matches are not yet implemented.
 - Live auth, RLS, Storage, Realtime, notifications, biometrics, and multi-device behavior require configured-backend/device checks. Unit tests and JS exports alone do not prove them.
-- No bank connection, payment processing, cloud OCR, advertising, or design overhaul is included.
+- No bank connection, payment processing, cloud OCR or advertising is included. Dates are still typed as `YYYY-MM-DD`; a native date picker is a follow-up.
 
 ## Run it on your phone
 

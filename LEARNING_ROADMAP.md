@@ -35,12 +35,13 @@ src/
   app/                 # ROUTES ONLY. Every file is a screen (Expo Router).
     _layout.tsx        #   root stack, theme, modal presentation
     (app)/             #   protected application routes
-      (tabs)/          #   native Expenses and Groups tabs
+      (tabs)/          #   native Home, Activity, Groups, Insights and More tabs
       add-expense.tsx  #   add/edit modal form
       expenses/[id].tsx #  expense detail route
     (auth)/            #   sign-in and callback routes
     join/[code].tsx    #   public invitation entry
   components/          # shared, dumb UI (ThemedText, EmptyState, ...)
+    ui/                #   design system: Card, Button, Chip, ListRow, Sheet, Icon, ...
   features/            # feature modules: domain logic, stores, feature UI
     expenses/
       components/      #   expense form, grouped FlatList (+ tests)
@@ -49,7 +50,7 @@ src/
       store.ts         #   Zustand state backed by SQLite
     groups/
 drizzle/               # generated, bundled SQLite migrations
-  constants/theme.ts   # colors, spacing, fonts
+  constants/theme.ts   # design tokens: light/dark colours, spacing, radii, fonts
   hooks/               # shared hooks
 ```
 
@@ -217,7 +218,9 @@ CSV/JSON recovery, explicit description-category suggestions, savings reservatio
 splits/multiple payers/itemized bills, fixed group exchange rates, linked refunds, partial settlements,
 group spending/settlement breakdowns and shareable previews, explicit account-linked group cash snapshots, zoned recurring schedules with optional end dates and
 unposted-commitment reporting, audited edits, a durable revision-checked operation queue, and
-ownership/invitation/access controls.
+ownership/invitation/access controls. The UI uses a token-based design system
+(`src/components/ui`) with five tabs; read `app-tabs.tsx`, `home-screen.tsx` and `personal-home.tsx`
+to see how screens compose cards, chips, bottom sheets and a floating action button.
 
 Continue learning through the [functionality guide and limitations](./README.md#functionality).
 Native OCR, remote push, continuous personal sync, partial/multiple-transaction group cash matching,

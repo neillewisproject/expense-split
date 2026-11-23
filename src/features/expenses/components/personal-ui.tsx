@@ -1,85 +1,117 @@
 import { router } from 'expo-router';
 import type { ReactNode } from 'react';
-import {
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  TextInput,
-  View,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useState } from 'react';
+import { StyleSheet, TextInput, View, type TextInputProps } from 'react-native';
+
 import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { MaxContentWidth, Spacing } from '@/constants/theme';
+import {
+  Banner,
+  Button,
+  ChipGroup,
+  Screen,
+  ScreenHeader,
+  type ButtonVariant,
+} from '@/components/ui';
+import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
-export function PersonalPage({ title, children }: { title: string; children: ReactNode }) {
+/** Standard pushed page: back button, title and a scrollable column of content. */
+export function PersonalPage({
+  title,
+  subtitle,
+  children,
+}: {
+  title: string;
+  subtitle?: string;
+  children: ReactNode;
+}) {
   return (
-    <ThemedView style={styles.root}>
-      <SafeAreaView style={styles.safe}>
-        <KeyboardAvoidingView
-          style={styles.root}
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-          <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.content}>
-            <Action label="Back" onPress={() => router.back()} />
-            <ThemedText type="subtitle">{title}</ThemedText>
-            {children}
-          </ScrollView>
-        </KeyboardAvoidingView>
-      </SafeAreaView>
-    </ThemedView>
+    <Screen
+      header={<ScreenHeader onBack={() => router.back()} title={title} subtitle={subtitle} />}>
+      {children}
+    </Screen>
   );
 }
+
 export function Field({
   label,
   value,
   onChange,
   multiline = false,
+  placeholder,
+  keyboardType,
+  autoCapitalize,
+  autoComplete,
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
   multiline?: boolean;
+  placeholder?: string;
+  keyboardType?: 'default' | 'decimal-pad' | 'email-address' | 'number-pad';
+  autoCapitalize?: TextInputProps['autoCapitalize'];
+  autoComplete?: TextInputProps['autoComplete'];
 }) {
   const theme = useTheme();
+  const [focused, setFocused] = useState(false);
   return (
     <View style={styles.field}>
-      <ThemedText type="smallBold">{label}</ThemedText>
+      <ThemedText type="caption" themeColor="textSecondary" style={styles.label}>
+        {label}
+      </ThemedText>
       <TextInput
         accessibilityLabel={label}
         value={value}
         onChangeText={onChange}
         multiline={multiline}
+        placeholder={placeholder}
+        keyboardType={keyboardType}
+        autoCapitalize={autoCapitalize}
+        autoComplete={autoComplete}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
         placeholderTextColor={theme.textSecondary}
-        style={[styles.input, { color: theme.text, borderColor: theme.backgroundSelected }]}
+        style={[
+          styles.input,
+          multiline && styles.multiline,
+          {
+            color: theme.text,
+            backgroundColor: theme.card,
+            borderColor: focused ? theme.accent : theme.border,
+          },
+        ]}
       />
     </View>
   );
 }
+
+const DESTRUCTIVE = /^(delete|remove|void|erase|discard|archive|sign out|leave)\b/i;
+
+/**
+ * Page action button. Defaults to a calm tonal style; destructive wording (Delete, Remove,
+ * Void…) is shown in red automatically. Pass `variant="primary"` for the page's main action.
+ */
 export function Action({
   label,
   onPress,
   disabled = false,
+  variant,
 }: {
   label: string;
   onPress: () => void;
   disabled?: boolean;
+  variant?: ButtonVariant;
 }) {
   return (
-    <Pressable
-      accessibilityRole="button"
-      disabled={disabled}
-      accessibilityState={{ disabled }}
+    <Button
+      label={label}
       onPress={onPress}
-      style={[styles.action, disabled && { opacity: 0.5 }]}>
-      <ThemedText type="smallBold" style={{ color: '#fff' }}>
-        {label}
-      </ThemedText>
-    </Pressable>
+      disabled={disabled}
+      variant={variant ?? (DESTRUCTIVE.test(label) ? 'danger' : 'secondary')}
+    />
   );
 }
+
 export function Choices({
   values,
   value,
@@ -89,55 +121,27 @@ export function Choices({
   value: string;
   onChange: (value: string) => void;
 }) {
-  return (
-    <View style={styles.choices}>
-      {values.map((option) => (
-        <Pressable
-          key={option.value}
-          accessibilityRole="radio"
-          accessibilityState={{ checked: value === option.value }}
-          onPress={() => onChange(option.value)}
-          style={styles.choice}>
-          <ThemedText>
-            {value === option.value ? '● ' : '○ '}
-            {option.label}
-          </ThemedText>
-        </Pressable>
-      ))}
-    </View>
-  );
+  return <ChipGroup options={values} value={value} onChange={onChange} />;
 }
+
 export function Failure({ message }: { message: string | null }) {
-  return message ? (
-    <ThemedText accessibilityRole="alert" style={{ color: '#b42318' }}>
-      {message}
-    </ThemedText>
-  ) : null;
+  return message ? <Banner tone="danger" message={message} /> : null;
 }
+
 export function message(error: unknown) {
   return error instanceof Error ? error.message : 'Operation failed. Please retry.';
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1 },
-  safe: { flex: 1, width: '100%', maxWidth: MaxContentWidth, alignSelf: 'center' },
-  content: { gap: Spacing.three, padding: Spacing.four, paddingBottom: 100 },
   field: { gap: Spacing.one },
+  label: { fontWeight: 600 },
   input: {
     minHeight: 48,
     borderWidth: 1,
-    borderRadius: Spacing.two,
-    padding: Spacing.two,
+    borderRadius: Radius.md,
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.two,
     fontSize: 16,
   },
-  action: {
-    minHeight: 48,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: Spacing.two,
-    backgroundColor: '#3c87f7',
-    padding: Spacing.two,
-  },
-  choices: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.one },
-  choice: { minHeight: 44, justifyContent: 'center', padding: Spacing.two },
+  multiline: { minHeight: 96, textAlignVertical: 'top' },
 });

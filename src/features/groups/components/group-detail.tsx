@@ -1,8 +1,20 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, Share, View } from 'react-native';
+import { Alert, Share, StyleSheet, View } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
+import {
+  Avatar,
+  Banner,
+  Button,
+  Card,
+  Divider,
+  ListRow,
+  ScreenHeader,
+  SectionHeader,
+} from '@/components/ui';
+import { Spacing } from '@/constants/theme';
 import { useAuth } from '@/features/auth/auth-provider';
+import { useTheme } from '@/hooks/use-theme';
 import { computeBalances, simplifyDebts } from '@/features/expenses/domain/balances';
 import { amountToInput, formatMoney } from '@/features/expenses/domain/money';
 import { getSupabaseClient } from '@/lib/supabase';
@@ -39,6 +51,7 @@ export function GroupDetail() {
 }
 
 function Details({ group }: { group: GroupWithDetails }) {
+  const theme = useTheme();
   const userId = useGroupsStore((state) => state.activeUserId);
   const [name, setName] = useState(group.name);
   const [memberName, setMemberName] = useState('');
@@ -122,18 +135,46 @@ function Details({ group }: { group: GroupWithDetails }) {
 
   return (
     <GroupPage virtualized>
-      <GroupButton label="‹ Groups" onPress={() => router.back()} />
-      <ThemedText type="subtitle">
-        {group.name}
-        {group.archivedAt ? ' · Archived' : ''}
-      </ThemedText>
-      <ThemedText>
-        {group.currency} ·{' '}
-        {group.syncUserId
-          ? `Shared · ${group.syncStatus} · revision ${group.revision}`
-          : 'Local only'}
-      </ThemedText>
-      <ThemedText>Group spending: {spendingText}. Settlements are not spending.</ThemedText>
+      <ScreenHeader
+        onBack={() => router.back()}
+        title={group.name}
+        subtitle={`${group.currency} · ${
+          group.syncUserId
+            ? `Shared · ${group.syncStatus} · revision ${group.revision}`
+            : 'On this device only'
+        }${group.archivedAt ? ' · Archived' : ''}`}
+      />
+      <Card>
+        <ThemedText type="caption" themeColor="textSecondary">
+          Total group spending
+        </ThemedText>
+        <ThemedText type="title">{spendingText}</ThemedText>
+        <ThemedText type="caption" themeColor="textSecondary">
+          Settlements are not counted as spending.
+        </ThemedText>
+        <View style={styles.actions}>
+          <Button
+            icon="add"
+            label="Add expense"
+            disabled={frozen}
+            style={styles.flex}
+            onPress={() =>
+              router.push({ pathname: '/groups/[id]/add-expense', params: { id: group.id } })
+            }
+          />
+          <Button
+            variant="secondary"
+            icon="settle"
+            label="Settle up"
+            accessibilityLabel="Record custom / partial settlement"
+            disabled={frozen}
+            style={styles.flex}
+            onPress={() =>
+              router.push({ pathname: '/groups/[id]/settle-up', params: { id: group.id } })
+            }
+          />
+        </View>
+      </Card>
       <GroupError error={error} />
       {group.conflictMessage ? (
         <>
@@ -181,44 +222,58 @@ function Details({ group }: { group: GroupWithDetails }) {
           ) : null}
         </>
       ) : null}
-      <GroupButton
-        label="+ Add expense"
-        disabled={frozen}
-        onPress={() =>
-          router.push({ pathname: '/groups/[id]/add-expense', params: { id: group.id } })
-        }
-      />
-      <GroupButton
-        label="Record custom / partial settlement"
-        disabled={frozen}
-        onPress={() =>
-          router.push({ pathname: '/groups/[id]/settle-up', params: { id: group.id } })
-        }
-      />
       {group.syncUserId ? (
-        <GroupButton
-          label="Account access, rotating invitations and ownership"
-          onPress={() => router.push({ pathname: '/groups/[id]/access', params: { id: group.id } })}
-        />
+        <Card padded={false}>
+          <ListRow
+            icon="people"
+            title="Members & access"
+            subtitle="Invitations, account access and ownership"
+            accessibilityLabel="Account access, rotating invitations and ownership"
+            onPress={() =>
+              router.push({ pathname: '/groups/[id]/access', params: { id: group.id } })
+            }
+          />
+        </Card>
       ) : (
-        <ThemedText>
-          {group.syncUserId
-            ? 'Share invitation becomes available after sync.'
-            : 'Existing local groups stay local. Create a new shared group after signing in.'}
-        </ThemedText>
+        <Banner
+          tone="info"
+          message="This group stays on this device. To share with others, sign in and create a new shared group."
+        />
       )}
-      <ThemedText type="smallBold">Balances</ThemedText>
-      {group.members.map((member) => (
-        <ThemedText key={member.id}>
-          {member.name}
-          {member.id === group.meMemberId || (userId && member.userId === userId) ? ' (me)' : ''}
-          {member.deactivatedAt ? ' (inactive)' : ''}:{' '}
-          {formatMoney(balances[member.id] ?? 0, group.currency)}
-        </ThemedText>
-      ))}
-      <ThemedText>
-        Positive balances get money back; negative balances owe money. Inactive participants retain
-        their historical debts.
+      <SectionHeader title="Balances" />
+      <Card padded={false}>
+        {group.members.map((member, index) => {
+          const balance = balances[member.id] ?? 0;
+          const me =
+            member.id === group.meMemberId || (userId !== null && member.userId === userId);
+          return (
+            <View key={member.id}>
+              {index ? <Divider /> : null}
+              <ListRow
+                leading={<Avatar name={member.name} />}
+                title={`${member.name}${me ? ' (me)' : ''}${member.deactivatedAt ? ' (inactive)' : ''}`}
+                subtitle={balance > 0 ? 'gets back' : balance < 0 ? 'owes' : 'settled up'}
+                trailing={
+                  <ThemedText
+                    type="smallBold"
+                    style={{
+                      color:
+                        balance > 0
+                          ? theme.success
+                          : balance < 0
+                            ? theme.danger
+                            : theme.textSecondary,
+                    }}>
+                    {formatMoney(Math.abs(balance), group.currency)}
+                  </ThemedText>
+                }
+              />
+            </View>
+          );
+        })}
+      </Card>
+      <ThemedText type="caption" themeColor="textSecondary">
+        Inactive participants keep their historical debts.
       </ThemedText>
       <GroupButton
         label={showReport ? 'Hide group breakdown' : 'Show group breakdown'}
@@ -279,11 +334,17 @@ function Details({ group }: { group: GroupWithDetails }) {
           <GroupError error={summary.error} />
         )
       ) : null}
-      <ThemedText type="smallBold">Suggested repayments</ThemedText>
-      <ThemedText>
-        Suggestions simplify net debt; they are not guaranteed to use the mathematically fewest
-        transfers.
-      </ThemedText>
+      <SectionHeader title="Suggested repayments" />
+      {suggestions.length ? (
+        <ThemedText type="caption" themeColor="textSecondary">
+          Tap a repayment to record it. Suggestions simplify net debt but may not always use the
+          fewest possible transfers.
+        </ThemedText>
+      ) : (
+        <ThemedText type="small" themeColor="textSecondary">
+          Everyone is settled up.
+        </ThemedText>
+      )}
       {suggestions.map((payment) => (
         <GroupButton
           key={`${payment.from}:${payment.to}`}
@@ -411,17 +472,18 @@ function Details({ group }: { group: GroupWithDetails }) {
         label={trash ? 'Show active entries' : 'Show deleted / voided entries'}
         onPress={() => setTrash(!trash)}
       />
-      <ThemedText type="smallBold">
-        {trash ? 'Trash / voided payments' : 'Expenses and payments'}
-      </ThemedText>
+      <SectionHeader title={trash ? 'Trash / voided payments' : 'Expenses and payments'} />
       {group.expenses
         .filter((expense) => !!expense.deletedAt === trash)
         .map((expense) => (
-          <View key={expense.id} style={{ gap: 8 }}>
-            <ThemedText type="smallBold">
-              {expense.description} · {formatMoney(expense.amount, group.currency)}
-            </ThemedText>
-            <ThemedText>
+          <Card key={expense.id}>
+            <View style={styles.entryHeader}>
+              <ThemedText type="heading" style={styles.flex}>
+                {expense.description}
+              </ThemedText>
+              <ThemedText type="heading">{formatMoney(expense.amount, group.currency)}</ThemedText>
+            </View>
+            <ThemedText type="caption" themeColor="textSecondary">
               {expense.date} · {expense.kind} · {expense.category} · revision {expense.revision}
             </ThemedText>
             {expense.conversion ? (
@@ -533,7 +595,7 @@ function Details({ group }: { group: GroupWithDetails }) {
                 />
               </>
             ) : null}
-          </View>
+          </Card>
         ))}
       <GroupButton label="Change history" selected={history} onPress={() => setHistory(!history)} />
       {history
@@ -615,3 +677,9 @@ function ParticipantControl({
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  flex: { flex: 1 },
+  actions: { flexDirection: 'row', gap: Spacing.two, marginTop: Spacing.two },
+  entryHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.two },
+});

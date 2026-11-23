@@ -1,10 +1,11 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
-import { Pressable, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { Banner, Button, IconBadge } from '@/components/ui';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useAuth } from '@/features/auth/auth-provider';
 import { joinGroupByInvite } from '@/features/groups/data/cloud-sync';
@@ -42,45 +43,39 @@ export default function JoinGroupScreen() {
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
+        <IconBadge icon="groups" size={56} />
         <ThemedText type="subtitle">Join a shared group</ThemedText>
         <ThemedText themeColor="textSecondary">
           The invitation is only accepted after you sign in.
         </ThemedText>
         {!code ? (
-          <ThemedText accessibilityRole="alert" style={styles.error}>
-            This invitation link is missing its code.
-          </ThemedText>
+          <Banner tone="danger" message="This invitation link is missing its code." />
         ) : !user ? (
           <>
             {!isConfigured ? (
-              <ThemedText accessibilityRole="alert" style={styles.error}>
-                Supabase is not configured on this app. Set it up before accepting invitations.
-              </ThemedText>
+              <Banner
+                tone="danger"
+                message="Supabase is not configured on this app. Set it up before accepting invitations."
+              />
             ) : null}
-            <Pressable
-              accessibilityRole="button"
+            <Button
+              icon="signIn"
+              label="Sign in to join"
               disabled={!isConfigured}
               onPress={continueToSignIn}
-              style={[styles.button, !isConfigured && styles.disabled]}>
-              <ThemedText style={styles.buttonText}>Sign in to join</ThemedText>
-            </Pressable>
+            />
           </>
         ) : (
           <>
             {joinMutation.error ? (
-              <ThemedText accessibilityRole="alert" style={styles.error}>
-                {joinMutation.error.message}
-              </ThemedText>
+              <Banner tone="danger" message={joinMutation.error.message} />
             ) : null}
-            <Pressable
-              accessibilityRole="button"
-              disabled={joinMutation.isPending}
+            <Button
+              icon="groups"
+              label={joinMutation.isPending ? 'Joining…' : 'Join group'}
+              loading={joinMutation.isPending}
               onPress={() => joinMutation.mutate(user.id)}
-              style={[styles.button, joinMutation.isPending && styles.disabled]}>
-              <ThemedText style={styles.buttonText}>
-                {joinMutation.isPending ? 'Joining…' : 'Join group'}
-              </ThemedText>
-            </Pressable>
+            />
           </>
         )}
       </SafeAreaView>
@@ -100,23 +95,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: Spacing.three,
     paddingHorizontal: Spacing.four,
-  },
-  button: {
-    minHeight: 52,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: Spacing.three,
-    backgroundColor: '#3c87f7',
-    padding: Spacing.three,
-  },
-  buttonText: {
-    color: '#ffffff',
-    fontWeight: '700',
-  },
-  disabled: {
-    opacity: 0.55,
-  },
-  error: {
-    color: '#b42318',
   },
 });

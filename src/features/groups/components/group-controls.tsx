@@ -1,29 +1,31 @@
 import { Children, isValidElement, type PropsWithChildren } from 'react';
 import {
-  KeyboardAvoidingView,
   FlatList,
+  KeyboardAvoidingView,
   Platform,
   Pressable,
   ScrollView,
   StyleSheet,
-  TextInput,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+
 import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { MaxContentWidth, Spacing } from '@/constants/theme';
+import { Banner, Icon } from '@/components/ui';
+import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
+import { Field } from '@/features/expenses/components/personal-ui';
 import { useTheme } from '@/hooks/use-theme';
 
 export function GroupPage({
   children,
   virtualized = false,
 }: PropsWithChildren<{ virtualized?: boolean }>) {
+  const theme = useTheme();
   return (
-    <ThemedView style={{ flex: 1 }}>
-      <SafeAreaView style={{ flex: 1 }}>
+    <View style={[styles.root, { backgroundColor: theme.background }]}>
+      <SafeAreaView style={styles.root}>
         <KeyboardAvoidingView
-          style={{ flex: 1 }}
+          style={styles.root}
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           {virtualized ? (
             <FlatList
@@ -33,16 +35,21 @@ export function GroupPage({
               }
               renderItem={({ item }) => <View>{item}</View>}
               keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+              ItemSeparatorComponent={() => <View style={styles.gap} />}
               contentContainerStyle={styles.page}
             />
           ) : (
-            <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.page}>
+            <ScrollView
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={[styles.page, styles.stack]}>
               {children}
             </ScrollView>
           )}
         </KeyboardAvoidingView>
       </SafeAreaView>
-    </ThemedView>
+    </View>
   );
 }
 
@@ -59,22 +66,23 @@ export function GroupField({
   numeric?: boolean;
   multiline?: boolean;
 }) {
-  const theme = useTheme();
   return (
-    <View style={{ gap: Spacing.one }}>
-      <ThemedText type="smallBold">{label}</ThemedText>
-      <TextInput
-        accessibilityLabel={label}
-        value={value}
-        onChangeText={onChange}
-        keyboardType={numeric ? 'decimal-pad' : 'default'}
-        multiline={multiline}
-        style={[styles.input, { color: theme.text, borderColor: theme.textSecondary }]}
-      />
-    </View>
+    <Field
+      label={label}
+      value={value}
+      onChange={onChange}
+      multiline={multiline}
+      keyboardType={numeric ? 'decimal-pad' : 'default'}
+    />
   );
 }
 
+const DESTRUCTIVE = /^(delete|void|deactivate|remove|archive|leave|keep remote)\b/i;
+
+/**
+ * Tonal action button. When `selected` is provided it becomes a toggle (checkbox role) that is
+ * filled while on, used for show/hide sections and single choices.
+ */
 export function GroupButton({
   label,
   onPress,
@@ -86,52 +94,57 @@ export function GroupButton({
   disabled?: boolean;
   selected?: boolean;
 }) {
+  const theme = useTheme();
+  const toggle = selected !== undefined;
+  const danger = !toggle && DESTRUCTIVE.test(label);
+  const background = selected ? theme.accent : danger ? theme.dangerSoft : theme.accentSoft;
+  const color = selected ? theme.onAccent : danger ? theme.danger : theme.accent;
   return (
     <Pressable
-      accessibilityRole={selected === undefined ? 'button' : 'checkbox'}
-      accessibilityState={{ disabled, ...(selected === undefined ? {} : { checked: selected }) }}
+      accessibilityRole={toggle ? 'checkbox' : 'button'}
+      accessibilityState={{ disabled, ...(toggle ? { checked: selected } : {}) }}
       disabled={disabled}
       onPress={onPress}
-      style={[
+      style={({ pressed }) => [
         styles.button,
-        disabled && { opacity: 0.5 },
-        selected && { backgroundColor: '#1b5fbf' },
+        { backgroundColor: background },
+        disabled && styles.disabled,
+        pressed && styles.pressed,
       ]}>
-      <ThemedText style={{ color: '#fff', fontWeight: '600' }}>{label}</ThemedText>
+      {toggle ? <Icon name={selected ? 'checked' : 'unchecked'} size={18} color={color} /> : null}
+      <ThemedText type="smallBold" style={[styles.label, { color }]}>
+        {label}
+      </ThemedText>
     </Pressable>
   );
 }
 
 export function GroupError({ error }: { error: string | null }) {
-  return error ? (
-    <ThemedText accessibilityRole="alert" style={{ color: '#b42318' }}>
-      {error}
-    </ThemedText>
-  ) : null;
+  return error ? <Banner tone="danger" message={error} /> : null;
 }
 
 const styles = StyleSheet.create({
+  root: { flex: 1 },
+  gap: { height: Spacing.three },
   page: {
-    gap: Spacing.three,
-    padding: Spacing.four,
+    padding: Spacing.three,
     paddingBottom: Spacing.six,
     width: '100%',
     maxWidth: MaxContentWidth,
     alignSelf: 'center',
   },
-  input: {
-    minHeight: 48,
-    borderWidth: 1,
-    borderRadius: Spacing.two,
-    padding: Spacing.two,
-    fontSize: 16,
-  },
+  stack: { gap: Spacing.three },
   button: {
     minHeight: 48,
-    backgroundColor: '#3c87f7',
-    borderRadius: Spacing.two,
-    padding: Spacing.two,
-    justifyContent: 'center',
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.two,
+    borderRadius: Radius.md,
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.two,
   },
+  label: { flexShrink: 1, textAlign: 'center' },
+  disabled: { opacity: 0.45 },
+  pressed: { opacity: 0.75 },
 });

@@ -1,20 +1,35 @@
-import { router, useLocalSearchParams, type Href } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { AppState, FlatList, Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { FlatList, StyleSheet, View } from 'react-native';
+
+import { EmptyState } from '@/components/empty-state';
 import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import {
+  Banner,
+  Button,
+  Card,
+  ChipGroup,
+  Fab,
+  IconButton,
+  Screen,
+  ScreenHeader,
+  SearchBar,
+  SectionHeader,
+  Sheet,
+} from '@/components/ui';
+import { BottomTabInset, Radius, Spacing } from '@/constants/theme';
+import { prepareBulkChange, type BulkAction } from '@/features/accounts/domain/bulk';
 import { usePersonalStore } from '@/features/accounts/store';
+import { useDueRecurring } from '@/features/recurrence/use-due-recurring';
+import { validatePeriod } from '@/features/reports/domain/periods';
 import { periodReport } from '@/features/reports/domain/reports';
+import { useTheme } from '@/hooks/use-theme';
 import { categoryLabel, EXPENSE_CATEGORIES, localDate } from '../domain/expense';
 import { filterEntries } from '../domain/ledger';
 import { formatMoney, parseAmount } from '../domain/money';
 import { useExpensesStore } from '../store';
-import { ExpenseList } from './expense-list';
+import { ExpenseList, TransactionRow } from './expense-list';
 import { Action, Choices, Failure, Field, message } from './personal-ui';
-import { prepareBulkChange, type BulkAction } from '@/features/accounts/domain/bulk';
-import { validatePeriod } from '@/features/reports/domain/periods';
 
 export function PersonalHome() {
   const params = useLocalSearchParams<{
@@ -45,6 +60,7 @@ function PersonalLedger({
   initialStart: string;
   initialEnd: string;
 }) {
+  const theme = useTheme();
   const entries = useExpensesStore((state) => state.expenses);
   const status = useExpensesStore((state) => state.status);
   const storeError = useExpensesStore((state) => state.error);
@@ -54,8 +70,8 @@ function PersonalLedger({
   const accounts = usePersonalStore((state) => state.accounts);
   const categories = usePersonalStore((state) => state.categories);
   const bulkChange = usePersonalStore((state) => state.bulkChange);
-  const generate = usePersonalStore((state) => state.generateDue);
   const drafts = usePersonalStore((state) => state.drafts);
+  const recurringError = useDueRecurring();
   const [search, setSearch] = useState('');
   const [month, setMonth] = useState(initialMonth);
   const [start, setStart] = useState(initialStart);
@@ -74,6 +90,7 @@ function PersonalLedger({
   const [pageSize, setPageSize] = useState(50);
   const [error, setError] = useState<string | null>(null);
   const [selecting, setSelecting] = useState(false);
+  const [bulkSheet, setBulkSheet] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
   const [bulkType, setBulkType] = useState<'category' | 'tags' | 'trash'>('category');
   const [bulkCategory, setBulkCategory] = useState('other');
@@ -81,12 +98,14 @@ function PersonalLedger({
   const [plan, setPlan] = useState<{ ids: string[]; action: BulkAction } | null>(null);
   const [confirmation, setConfirmation] = useState('');
   const [busy, setBusy] = useState(false);
+  const categoryKeys = [...EXPENSE_CATEGORIES, ...categories.map((name) => `custom:${name}`)];
   function invalidatePlan() {
     setPlan(null);
     setConfirmation('');
   }
   function cancelSelection() {
     setSelecting(false);
+    setBulkSheet(false);
     setSelected([]);
     invalidatePlan();
   }
@@ -96,19 +115,24 @@ function PersonalLedger({
     );
     invalidatePlan();
   }
+  function clearFilters() {
+    setSearch('');
+    setMonth('');
+    setStart('');
+    setEnd('');
+    setCurrency('');
+    setType('');
+    setCategory('');
+    setAccountId('');
+    setTag('');
+    setMin('');
+    setMax('');
+    setReceipt('');
+    setSort('newest');
+  }
   useEffect(() => {
     if (status === 'idle') void loadEntries();
   }, [status, loadEntries]);
-  useEffect(() => {
-    const check = () => {
-      void generate().catch((err: unknown) => setError(message(err)));
-    };
-    check();
-    const listener = AppState.addEventListener('change', (state) => {
-      if (state === 'active') check();
-    });
-    return () => listener.remove();
-  }, [generate]);
   const result = useMemo(() => {
     try {
       if (month && !/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) throw new Error('Use YYYY-MM for month');
@@ -166,15 +190,19 @@ function PersonalLedger({
           entries.filter((entry) => !entry.deletedAt).map((entry) => entry.currency ?? 'INR'),
         ),
       ]
-        .map((code) => {
-          const report = periodReport(entries, localDate().slice(0, 7), code);
-          return `${code}: ${formatMoney(report.spending, code)} net spent`;
-        })
+        .map((code) =>
+          formatMoney(periodReport(entries, localDate().slice(0, 7), code).spending, code),
+        )
         .join(' · ');
     } catch (err) {
       return message(err);
     }
   }, [entries]);
+  const activeFilters =
+    [month, start, end, currency, type, category, accountId, tag, min, max]
+      .concat(receipt)
+      .filter(Boolean).length + (sort === 'newest' ? 0 : 1);
+  const pending = drafts.filter((draft) => draft.status === 'pending').length;
   async function mutate(id: string) {
     setError(null);
     try {
@@ -214,315 +242,404 @@ function PersonalLedger({
       setBusy(false);
     }
   }
-  return (
-    <ThemedView style={styles.root}>
-      <SafeAreaView style={styles.safe}>
-        <ThemedText type="subtitle">Personal ledger</ThemedText>
-        <ThemedText type="small">This month · {summary || 'No spending yet'}</ThemedText>
-        <ScrollView horizontal style={styles.links} contentContainerStyle={{ gap: Spacing.two }}>
-          {(
-            [
-              'accounts',
-              'budgets',
-              'goals',
-              'reports',
-              'recurring',
-              'import-export',
-              'personal-settings',
-              'privacy',
-              'personal-cloud',
-              'spending-by-category',
-            ] as const
-          ).map((route) => (
-            <Pressable
-              key={route}
-              accessibilityRole="button"
-              style={styles.nav}
-              onPress={() => router.push(`/${route}` as Href)}>
-              <ThemedText type="linkPrimary">{route.replaceAll('-', ' ')}</ThemedText>
-            </Pressable>
-          ))}
-        </ScrollView>
-        {drafts.some((draft) => draft.status === 'pending') ? (
-          <Action
-            label={`${drafts.filter((draft) => draft.status === 'pending').length} recurring drafts need approval`}
-            onPress={() => router.push('/recurring')}
-          />
-        ) : null}
-        <Field
-          label="Search description, notes, tags"
-          value={search}
-          onChange={(value) => {
-            setSearch(value);
-            setPageSize(50);
-          }}
+  const visible = result.rows.slice(0, pageSize);
+  const failure = error ?? result.error ?? storeError ?? recurringError;
+  const showMore =
+    result.rows.length > pageSize ? (
+      <Button
+        variant="ghost"
+        label={`Show more (${result.rows.length - pageSize} remaining)`}
+        onPress={() => setPageSize(pageSize + 50)}
+      />
+    ) : undefined;
+  const listInset = BottomTabInset + (selecting ? 150 : 96);
+
+  const header = (
+    <View style={styles.listHeader}>
+      {pending && !trash ? (
+        <Banner
+          tone="warning"
+          message={`${pending} recurring ${pending === 1 ? 'draft needs' : 'drafts need'} approval`}
+          actionLabel="Review"
+          onAction={() => router.push('/recurring')}
         />
-        <View style={styles.linksRow}>
-          <Action
-            label={filters ? 'Hide filters' : 'Search filters'}
-            onPress={() => setFilters(!filters)}
+      ) : null}
+      {failure ? <Failure message={failure} /> : null}
+      {status === 'error' ? (
+        <Action label="Retry loading transactions" onPress={() => void loadEntries()} />
+      ) : null}
+      {start || end ? (
+        <ThemedText type="caption" themeColor="textSecondary">
+          Dates {start || '…'} to {end || '…'} (inclusive)
+        </ThemedText>
+      ) : null}
+      {trash ? (
+        <Banner
+          tone="info"
+          message="Deleted transactions stay here until restored. Swipe a row left to restore it."
+        />
+      ) : null}
+    </View>
+  );
+
+  return (
+    <View style={styles.root}>
+      <Screen
+        tabBar
+        scroll={false}
+        header={
+          <>
+            <ScreenHeader
+              large
+              title={trash ? 'Trash' : 'Activity'}
+              subtitle={
+                trash
+                  ? 'Recover deleted transactions'
+                  : `This month · ${summary || 'No spending yet'}`
+              }
+              right={
+                <>
+                  {!trash ? (
+                    <IconButton
+                      icon="select"
+                      selected={selecting}
+                      accessibilityLabel={
+                        selecting ? 'Cancel bulk selection' : 'Select for bulk actions'
+                      }
+                      disabled={busy}
+                      onPress={() => {
+                        if (selecting) cancelSelection();
+                        else setSelecting(true);
+                      }}
+                    />
+                  ) : null}
+                  <IconButton
+                    icon="trash"
+                    selected={trash}
+                    accessibilityLabel={trash ? 'Show active' : 'Trash / restore'}
+                    onPress={() => {
+                      setTrash(!trash);
+                      cancelSelection();
+                    }}
+                  />
+                </>
+              }
+            />
+            <View style={styles.searchRow}>
+              <SearchBar
+                value={search}
+                onChange={(value) => {
+                  setSearch(value);
+                  setPageSize(50);
+                }}
+                placeholder="Search transactions"
+                accessibilityLabel="Search description, notes, tags"
+              />
+              <View>
+                <IconButton
+                  icon="filter"
+                  selected={activeFilters > 0}
+                  accessibilityLabel={
+                    activeFilters ? `Search filters (${activeFilters} active)` : 'Search filters'
+                  }
+                  onPress={() => setFilters(true)}
+                />
+              </View>
+            </View>
+          </>
+        }>
+        {status === 'loading' && entries.length === 0 ? (
+          <ThemedText themeColor="textSecondary">Loading transactions…</ThemedText>
+        ) : selecting ? (
+          <FlatList
+            data={visible}
+            keyExtractor={(entry) => entry.id}
+            ListHeaderComponent={header}
+            ListFooterComponent={showMore}
+            contentContainerStyle={{ paddingBottom: listInset }}
+            ItemSeparatorComponent={() => <View style={{ height: Spacing.one }} />}
+            ListEmptyComponent={
+              <EmptyState title="No matching transactions" message="Try clearing your filters." />
+            }
+            renderItem={({ item }) => (
+              <TransactionRow
+                expense={item}
+                role="checkbox"
+                checked={selected.includes(item.id)}
+                disabled={busy}
+                accessibilityLabel={`Select ${item.description}, ${item.date}`}
+                onPress={() => toggleSelected(item.id)}
+              />
+            )}
           />
-          <Action
-            label={trash ? 'Show active' : 'Trash / restore'}
+        ) : (
+          <ExpenseList
+            expenses={visible}
+            header={header}
+            footer={showMore}
+            bottomInset={listInset}
+            onDelete={(id) => void mutate(id)}
+            onSelect={(id) => router.push({ pathname: '/expenses/[id]', params: { id } })}
+          />
+        )}
+      </Screen>
+
+      {selecting ? (
+        <View
+          style={[
+            styles.bulkBar,
+            { backgroundColor: theme.card, borderColor: theme.border, bottom: BottomTabInset },
+          ]}>
+          <ThemedText type="smallBold" style={styles.bulkCount}>
+            {selected.length} selected
+          </ThemedText>
+          <Button
+            variant="ghost"
+            label={`Select page (${Math.min(pageSize, result.rows.length)})`}
+            disabled={busy}
             onPress={() => {
-              setTrash(!trash);
-              cancelSelection();
+              setSelected((current) => [
+                ...new Set([...current, ...visible.map((entry) => entry.id)]),
+              ]);
+              invalidatePlan();
             }}
           />
+          <Button
+            label="Bulk change"
+            accessibilityLabel={`Bulk change ${selected.length} selected`}
+            disabled={busy || !selected.length}
+            onPress={() => setBulkSheet(true)}
+          />
         </View>
-        {filters ? (
-          <ScrollView style={styles.filters} keyboardShouldPersistTaps="handled">
-            <Field label="Month (YYYY-MM, optional)" value={month} onChange={setMonth} />
-            <Field label="From date (YYYY-MM-DD, optional)" value={start} onChange={setStart} />
-            <Field label="Through date (YYYY-MM-DD, optional)" value={end} onChange={setEnd} />
-            <Field
-              label="Currency (optional)"
-              value={currency}
-              onChange={(value) => setCurrency(value.toUpperCase())}
+      ) : !trash ? (
+        <Fab label="Add" onPress={() => router.push('/add-expense')} />
+      ) : null}
+
+      <Sheet
+        visible={filters}
+        title="Filters"
+        onClose={() => setFilters(false)}
+        footer={
+          <View style={styles.sheetActions}>
+            <Button
+              variant="secondary"
+              label="Clear filters"
+              onPress={clearFilters}
+              style={styles.flex}
             />
-            <Choices
-              value={type}
-              onChange={setType}
-              values={['', 'expense', 'income', 'refund', 'transfer'].map((value) => ({
-                value,
-                label: value || 'All types',
-              }))}
+            <Button
+              label={`Show ${result.rows.length} results`}
+              onPress={() => setFilters(false)}
+              style={styles.flex}
             />
-            <Field
-              label="Category key (food or custom:Name)"
-              value={category}
-              onChange={setCategory}
-            />
-            <Choices
+          </View>
+        }>
+        <SectionHeader title="Type" />
+        <ChipGroup
+          scroll
+          value={type}
+          onChange={setType}
+          options={['', 'expense', 'income', 'refund', 'transfer'].map((value) => ({
+            value,
+            label: value ? value[0]!.toUpperCase() + value.slice(1) : 'All',
+          }))}
+        />
+        <SectionHeader title="Category" />
+        <ChipGroup
+          scroll
+          value={category}
+          onChange={setCategory}
+          options={[
+            { value: '', label: 'All' },
+            ...categoryKeys.map((value) => ({ value, label: categoryLabel(value) })),
+          ]}
+        />
+        {accounts.length ? (
+          <>
+            <SectionHeader title="Account" />
+            <ChipGroup
+              scroll
               value={accountId}
               onChange={setAccountId}
-              values={[
+              options={[
                 { value: '', label: 'All accounts' },
                 ...accounts.map((account) => ({ value: account.id, label: account.name })),
               ]}
             />
-            <Field label="Exact tag" value={tag} onChange={setTag} />
-            <Field label="Minimum amount" value={min} onChange={setMin} />
-            <Field label="Maximum amount" value={max} onChange={setMax} />
-            <Choices
-              value={receipt}
-              onChange={setReceipt}
-              values={[
-                { value: '', label: 'Any receipt' },
-                { value: 'yes', label: 'Has receipt' },
-                { value: 'no', label: 'No receipt' },
-              ]}
-            />
-            <Choices
-              value={sort}
-              onChange={setSort}
-              values={['newest', 'oldest', 'amount'].map((value) => ({ value, label: value }))}
-            />
-            {sort === 'amount' && !currency ? (
-              <ThemedText>
-                Amount sorting compares minor units; select one currency for meaningful comparisons.
-              </ThemedText>
-            ) : null}
-            <Action
-              label="Clear filters"
-              onPress={() => {
-                setSearch('');
-                setMonth('');
-                setStart('');
-                setEnd('');
-                setCurrency('');
-                setType('');
-                setCategory('');
-                setAccountId('');
-                setTag('');
-                setMin('');
-                setMax('');
-                setReceipt('');
-              }}
-            />
-          </ScrollView>
+          </>
         ) : null}
-        <Failure message={error ?? result.error ?? storeError} />
-        {start || end ? (
-          <ThemedText type="small">
-            Date filter: {start} through {end} inclusive
+        <SectionHeader title="Dates" />
+        <Field label="Month" placeholder="YYYY-MM" value={month} onChange={setMonth} />
+        <View style={styles.pair}>
+          <View style={styles.flex}>
+            <Field label="From" placeholder="YYYY-MM-DD" value={start} onChange={setStart} />
+          </View>
+          <View style={styles.flex}>
+            <Field label="Through" placeholder="YYYY-MM-DD" value={end} onChange={setEnd} />
+          </View>
+        </View>
+        <SectionHeader title="Amount" />
+        <Field
+          label="Currency"
+          placeholder="e.g. INR"
+          value={currency}
+          onChange={(value) => setCurrency(value.toUpperCase())}
+        />
+        <View style={styles.pair}>
+          <View style={styles.flex}>
+            <Field label="Minimum" keyboardType="decimal-pad" value={min} onChange={setMin} />
+          </View>
+          <View style={styles.flex}>
+            <Field label="Maximum" keyboardType="decimal-pad" value={max} onChange={setMax} />
+          </View>
+        </View>
+        <SectionHeader title="More" />
+        <Field label="Exact tag" value={tag} onChange={setTag} />
+        <ChipGroup
+          value={receipt}
+          onChange={setReceipt}
+          options={[
+            { value: '', label: 'Any receipt' },
+            { value: 'yes', label: 'Has receipt' },
+            { value: 'no', label: 'No receipt' },
+          ]}
+        />
+        <SectionHeader title="Sort by" />
+        <ChipGroup
+          value={sort}
+          onChange={setSort}
+          options={[
+            { value: 'newest', label: 'Newest' },
+            { value: 'oldest', label: 'Oldest' },
+            { value: 'amount', label: 'Amount' },
+          ]}
+        />
+        {sort === 'amount' && !currency ? (
+          <ThemedText type="caption" themeColor="textSecondary">
+            Choose one currency to sort by amount.
           </ThemedText>
         ) : null}
-        {!trash ? (
-          <Action
-            label={selecting ? 'Cancel bulk selection' : 'Select for bulk actions'}
-            disabled={busy}
-            onPress={() => {
-              if (selecting) cancelSelection();
-              else setSelecting(true);
+        {result.error ? <Failure message={result.error} /> : null}
+      </Sheet>
+
+      <Sheet visible={bulkSheet} title="Bulk changes" onClose={() => setBulkSheet(false)}>
+        <ThemedText type="smallBold">
+          {selected.length} explicitly selected across filters
+        </ThemedText>
+        <Choices
+          value={bulkType}
+          onChange={(value) => {
+            setBulkType(value as typeof bulkType);
+            invalidatePlan();
+          }}
+          values={[
+            { value: 'category', label: 'Recategorize' },
+            { value: 'tags', label: 'Add tags' },
+            { value: 'trash', label: 'Move to trash' },
+          ]}
+        />
+        {bulkType === 'category' ? (
+          <Choices
+            value={bulkCategory}
+            onChange={(value) => {
+              setBulkCategory(value);
+              invalidatePlan();
+            }}
+            values={categoryKeys.map((value) => ({ value, label: categoryLabel(value) }))}
+          />
+        ) : null}
+        {bulkType === 'tags' ? (
+          <Field
+            label="Bulk tags to add (comma separated)"
+            value={bulkTags}
+            onChange={(value) => {
+              setBulkTags(value);
+              invalidatePlan();
             }}
           />
         ) : null}
-        {selecting ? (
-          <ScrollView style={styles.bulkPanel} keyboardShouldPersistTaps="handled">
+        <ThemedText type="caption" themeColor="textSecondary">
+          Tags are added without removing existing tags. Category changes must include linked
+          refunds where needed; trashing an original requires selecting its active refunds too. All
+          selected changes commit together or none do.
+        </ThemedText>
+        {error ? <Failure message={error} /> : null}
+        <Action
+          label={`Review ${selected.length} selected changes`}
+          disabled={busy || !selected.length}
+          onPress={reviewBulk}
+        />
+        {plan ? (
+          <Card>
             <ThemedText type="smallBold">
-              {selected.length} explicitly selected across filters
+              Confirm{' '}
+              {plan.action.type === 'category'
+                ? `category → ${categoryLabel(plan.action.category)}`
+                : plan.action.type === 'tags'
+                  ? `add tags: ${plan.action.tags}`
+                  : 'move to recoverable trash'}
             </ThemedText>
-            <Action
-              label={`Select displayed page (${Math.min(pageSize, result.rows.length)})`}
-              disabled={busy}
-              onPress={() => {
-                setSelected((current) => [
-                  ...new Set([
-                    ...current,
-                    ...result.rows.slice(0, pageSize).map((entry) => entry.id),
-                  ]),
-                ]);
-                invalidatePlan();
-              }}
+            {plan.ids.map((id) => (
+              <ThemedText key={id} type="small" themeColor="textSecondary">
+                {entries.find((entry) => entry.id === id)?.date} ·{' '}
+                {entries.find((entry) => entry.id === id)?.description ?? id}
+              </ThemedText>
+            ))}
+            <Field
+              label={`Type APPLY ${plan.ids.length} to confirm`}
+              value={confirmation}
+              onChange={setConfirmation}
             />
             <Action
-              label="Clear all selections"
-              disabled={busy}
-              onPress={() => {
-                setSelected([]);
-                invalidatePlan();
-              }}
+              variant="primary"
+              label="Apply confirmed bulk changes"
+              disabled={busy || confirmation !== `APPLY ${plan.ids.length}`}
+              onPress={() => void applyBulk()}
             />
-            <Choices
-              value={bulkType}
-              onChange={(value) => {
-                setBulkType(value as typeof bulkType);
-                invalidatePlan();
-              }}
-              values={[
-                { value: 'category', label: 'Recategorize' },
-                { value: 'tags', label: 'Add tags' },
-                { value: 'trash', label: 'Move to trash' },
-              ]}
-            />
-            {bulkType === 'category' ? (
-              <Choices
-                value={bulkCategory}
-                onChange={(value) => {
-                  setBulkCategory(value);
-                  invalidatePlan();
-                }}
-                values={[...EXPENSE_CATEGORIES, ...categories.map((name) => `custom:${name}`)].map(
-                  (value) => ({ value, label: categoryLabel(value) }),
-                )}
-              />
-            ) : null}
-            {bulkType === 'tags' ? (
-              <Field
-                label="Bulk tags to add (comma separated)"
-                value={bulkTags}
-                onChange={(value) => {
-                  setBulkTags(value);
-                  invalidatePlan();
-                }}
-              />
-            ) : null}
-            <ThemedText type="small">
-              Tags are added without removing existing tags. Category changes must include linked
-              refunds where needed; trashing an original requires selecting its active refunds too.
-              All selected changes commit together or none do.
-            </ThemedText>
-            <Action
-              label={`Review ${selected.length} selected changes`}
-              disabled={busy || !selected.length}
-              onPress={reviewBulk}
-            />
-            {plan ? (
-              <>
-                <ThemedText type="smallBold">
-                  Confirm{' '}
-                  {plan.action.type === 'category'
-                    ? `category → ${categoryLabel(plan.action.category)}`
-                    : plan.action.type === 'tags'
-                      ? `add tags: ${plan.action.tags}`
-                      : 'move to recoverable trash'}
-                </ThemedText>
-                {plan.ids.map((id) => (
-                  <ThemedText key={id} type="small">
-                    {entries.find((entry) => entry.id === id)?.date} ·{' '}
-                    {entries.find((entry) => entry.id === id)?.description ?? id}
-                  </ThemedText>
-                ))}
-                <Field
-                  label={`Type APPLY ${plan.ids.length} to confirm`}
-                  value={confirmation}
-                  onChange={setConfirmation}
-                />
-                <Action
-                  label="Apply confirmed bulk changes"
-                  disabled={busy || confirmation !== `APPLY ${plan.ids.length}`}
-                  onPress={() => void applyBulk()}
-                />
-              </>
-            ) : null}
-          </ScrollView>
+          </Card>
         ) : null}
-        {status === 'error' ? (
-          <Action label="Retry loading transactions" onPress={() => void loadEntries()} />
-        ) : null}
-        {trash ? (
-          <ThemedText type="small">
-            Tap a transaction to view it; swipe and tap Restore to recover it.
-          </ThemedText>
-        ) : null}
-        <View style={{ flex: 1 }}>
-          {status === 'loading' && entries.length === 0 ? (
-            <ThemedText>Loading personal transactions…</ThemedText>
-          ) : selecting ? (
-            <FlatList
-              data={result.rows.slice(0, pageSize)}
-              keyExtractor={(entry) => entry.id}
-              ListEmptyComponent={<ThemedText>No matching transactions</ThemedText>}
-              renderItem={({ item }) => (
-                <Pressable
-                  accessibilityRole="checkbox"
-                  accessibilityLabel={`Select ${item.description}, ${item.date}`}
-                  accessibilityState={{ checked: selected.includes(item.id), disabled: busy }}
-                  disabled={busy}
-                  onPress={() => toggleSelected(item.id)}
-                  style={styles.selectionRow}>
-                  <ThemedText>
-                    {selected.includes(item.id) ? '☑' : '☐'} {item.description} · {item.date} ·{' '}
-                    {formatMoney(item.amount, item.currency ?? 'INR')}
-                  </ThemedText>
-                </Pressable>
-              )}
-            />
-          ) : (
-            <ExpenseList
-              expenses={result.rows.slice(0, pageSize)}
-              onDelete={(id) => void mutate(id)}
-              onSelect={(id) => router.push({ pathname: '/expenses/[id]', params: { id } })}
-            />
-          )}
-        </View>
-        {result.rows.length > pageSize ? (
-          <Action
-            label={`Show more (${result.rows.length - pageSize} remaining)`}
-            onPress={() => setPageSize(pageSize + 50)}
-          />
-        ) : null}
-        <Action label="+ Add transaction" onPress={() => router.push('/add-expense')} />
-      </SafeAreaView>
-    </ThemedView>
+        <Action
+          label="Clear all selections"
+          disabled={busy}
+          onPress={() => {
+            setSelected([]);
+            invalidatePlan();
+          }}
+        />
+      </Sheet>
+    </View>
   );
 }
+
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  safe: {
-    flex: 1,
-    width: '100%',
-    maxWidth: MaxContentWidth,
-    alignSelf: 'center',
+  flex: { flex: 1 },
+  searchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: Spacing.two,
-    padding: Spacing.three,
-    paddingBottom: BottomTabInset,
+    paddingBottom: Spacing.two,
   },
-  links: { flexGrow: 0, maxHeight: 48 },
-  nav: { minHeight: 44, justifyContent: 'center', paddingHorizontal: Spacing.one },
-  linksRow: { flexDirection: 'row', gap: Spacing.two },
-  filters: { maxHeight: 220, flexGrow: 0 },
-  bulkPanel: { maxHeight: 230, flexGrow: 0 },
-  selectionRow: { minHeight: 52, paddingVertical: Spacing.two },
+  listHeader: { gap: Spacing.two },
+  pair: { flexDirection: 'row', gap: Spacing.two },
+  sheetActions: { flexDirection: 'row', gap: Spacing.two },
+  bulkBar: {
+    position: 'absolute',
+    left: Spacing.three,
+    right: Spacing.three,
+    marginBottom: Spacing.three,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+    padding: Spacing.two,
+    paddingLeft: Spacing.three,
+    borderRadius: Radius.lg,
+    borderWidth: StyleSheet.hairlineWidth,
+    elevation: 6,
+    shadowColor: '#101828',
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+  },
+  bulkCount: { flex: 1 },
 });

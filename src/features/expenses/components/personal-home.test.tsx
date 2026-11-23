@@ -32,7 +32,29 @@ jest.mock('expo-router', () => ({
   router: { push: jest.fn(), back: jest.fn() },
   useLocalSearchParams: () => ({}),
 }));
-jest.mock('./expense-list', () => ({ ExpenseList: () => null }));
+jest.mock('./expense-list', () => ({
+  ExpenseList: () => null,
+  TransactionRow: ({
+    accessibilityLabel,
+    checked,
+    onPress,
+  }: {
+    accessibilityLabel: string;
+    checked: boolean;
+    onPress: () => void;
+  }) => {
+    const { Pressable } = jest.requireActual<typeof import('react-native')>('react-native');
+    return (
+      <Pressable
+        accessibilityRole="checkbox"
+        accessibilityLabel={accessibilityLabel}
+        accessibilityState={{ checked }}
+        onPress={onPress}
+      />
+    );
+  },
+}));
+jest.mock('@/features/recurrence/use-due-recurring', () => ({ useDueRecurring: () => null }));
 jest.mock('@/features/expenses/store', () => ({
   useExpensesStore: (selector: (state: object) => unknown) =>
     selector({
@@ -59,6 +81,7 @@ it('requires explicit selection, preview and confirmation before applying only s
   await render(<PersonalHome />);
   await fireEvent.press(screen.getByRole('button', { name: 'Select for bulk actions' }));
   await fireEvent.press(screen.getByRole('checkbox', { name: 'Select Meal, 2026-03-01' }));
+  await fireEvent.press(screen.getByRole('button', { name: 'Bulk change 1 selected' }));
   await fireEvent.press(screen.getByRole('radio', { name: /Add tags/ }));
   await fireEvent.changeText(
     screen.getByLabelText('Bulk tags to add (comma separated)'),

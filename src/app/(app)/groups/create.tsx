@@ -3,7 +3,6 @@ import { useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
-  Pressable,
   ScrollView,
   StyleSheet,
   TextInput,
@@ -13,7 +12,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { MaxContentWidth, Spacing } from '@/constants/theme';
+import { Banner, Button, IconButton } from '@/components/ui';
+import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { useGroupsStore } from '@/features/groups/store';
 import { useAuth } from '@/features/auth/auth-provider';
 import { useTheme } from '@/hooks/use-theme';
@@ -43,16 +43,17 @@ export default function CreateGroupScreen() {
     }
   }
 
-  const inputStyle = [styles.input, { color: theme.text, borderColor: theme.backgroundSelected }];
+  const inputStyle = [
+    styles.input,
+    { color: theme.text, backgroundColor: theme.card, borderColor: theme.border },
+  ];
 
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
-          <Pressable accessibilityRole="button" onPress={() => router.back()}>
-            <ThemedText type="linkPrimary">Cancel</ThemedText>
-          </Pressable>
-          <ThemedText type="smallBold">New group</ThemedText>
+          <IconButton icon="close" accessibilityLabel="Cancel" onPress={() => router.back()} />
+          <ThemedText type="heading">New group</ThemedText>
           <View style={styles.headerSpacer} />
         </View>
         <KeyboardAvoidingView
@@ -112,20 +113,13 @@ export default function CreateGroupScreen() {
                 Separate names with a new line or comma.
               </ThemedText>
             </View>
-            {error ? (
-              <ThemedText accessibilityRole="alert" style={styles.error}>
-                {error}
-              </ThemedText>
-            ) : null}
-            <Pressable
-              accessibilityRole="button"
-              disabled={isSaving}
+            {error ? <Banner tone="danger" message={error} /> : null}
+            <Button
+              icon="check"
+              label={isSaving ? 'Creating…' : 'Create group'}
+              loading={isSaving}
               onPress={() => void handleCreateGroup()}
-              style={[styles.submitButton, isSaving && styles.disabledButton]}>
-              <ThemedText style={styles.submitButtonText}>
-                {isSaving ? 'Creating…' : 'Create group'}
-              </ThemedText>
-            </Pressable>
+            />
           </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
@@ -167,7 +161,7 @@ const styles = StyleSheet.create({
   input: {
     minHeight: 48,
     borderWidth: 1,
-    borderRadius: Spacing.two,
+    borderRadius: Radius.md,
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two,
     fontSize: 16,
@@ -175,21 +169,5 @@ const styles = StyleSheet.create({
   membersInput: {
     minHeight: 112,
     textAlignVertical: 'top',
-  },
-  error: {
-    color: '#b42318',
-  },
-  submitButton: {
-    alignItems: 'center',
-    borderRadius: Spacing.three,
-    backgroundColor: '#3c87f7',
-    padding: Spacing.three,
-  },
-  submitButtonText: {
-    color: '#ffffff',
-    fontWeight: '700',
-  },
-  disabledButton: {
-    opacity: 0.65,
   },
 });

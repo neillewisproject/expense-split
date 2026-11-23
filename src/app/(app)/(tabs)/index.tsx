@@ -1,1 +1,1 @@
-export { PersonalHome as default } from '@/features/expenses/components/personal-home';
+export { HomeScreen as default } from '@/features/home/components/home-screen';

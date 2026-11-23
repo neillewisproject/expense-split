@@ -1,10 +1,12 @@
 import * as LocalAuthentication from 'expo-local-authentication';
 import * as SecureStore from 'expo-secure-store';
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
-import { AppState, Platform, Pressable, View } from 'react-native';
+import { AppState, Platform, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { Banner, Button, IconBadge } from '@/components/ui';
+import { Spacing } from '@/constants/theme';
 
 // SecureStore keys may contain only letters, digits, ".", "-" and "_".
 const LOCK_KEY = 'expense-split.app-lock';
@@ -98,15 +100,21 @@ export function AppLockProvider({ children }: { children: ReactNode }) {
   return (
     <Context.Provider value={{ enabled, setEnabled }}>
       {!loaded || locked ? (
-        <ThemedView style={{ flex: 1, justifyContent: 'center', padding: 24 }}>
-          <View style={{ gap: 20 }}>
+        <ThemedView style={styles.lock}>
+          <View style={styles.lockContent}>
+            <IconBadge icon="lock" size={64} />
             <ThemedText type="subtitle">Expense Split is locked</ThemedText>
-            {error ? <ThemedText accessibilityRole="alert">{error}</ThemedText> : null}
-            <Pressable accessibilityRole="button" disabled={busy} onPress={() => void unlock()}>
-              <ThemedText type="linkPrimary">
-                {busy ? 'Unlocking…' : 'Unlock with device authentication'}
-              </ThemedText>
-            </Pressable>
+            <ThemedText type="small" themeColor="textSecondary" style={styles.center}>
+              Unlock with your fingerprint, face or device passcode.
+            </ThemedText>
+            {error ? <Banner tone="danger" message={error} /> : null}
+            <Button
+              icon="lock"
+              label={busy ? 'Unlocking…' : 'Unlock with device authentication'}
+              disabled={busy}
+              onPress={() => void unlock()}
+              style={styles.unlock}
+            />
           </View>
         </ThemedView>
       ) : (
@@ -121,3 +129,16 @@ export function useAppLock(): LockContext {
   if (!context) throw new Error('useAppLock requires AppLockProvider');
   return context;
 }
+
+const styles = StyleSheet.create({
+  lock: { flex: 1, justifyContent: 'center', padding: Spacing.four },
+  lockContent: {
+    gap: Spacing.three,
+    alignItems: 'center',
+    width: '100%',
+    maxWidth: 420,
+    alignSelf: 'center',
+  },
+  center: { textAlign: 'center' },
+  unlock: { alignSelf: 'stretch' },
+});

@@ -1,11 +1,10 @@
 import { Image } from 'expo-image';
-import { router, useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { Alert, Pressable, ScrollView } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Alert, Pressable } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
+import { PersonalPage } from '@/features/expenses/components/personal-ui';
 import { useAuth } from '@/features/auth/auth-provider';
 import { useGroupsStore } from '@/features/groups/store';
 import { listSharedReceipts, uploadSharedReceipt } from '@/features/receipts/cloud';
@@ -72,80 +71,72 @@ function ReceiptPanel({
     (expense?.authorId === userId || group?.ownerId === userId),
   );
   return (
-    <ThemedView style={{ flex: 1 }}>
-      <SafeAreaView style={{ flex: 1 }}>
-        <ScrollView contentContainerStyle={{ padding: 24, gap: 20 }}>
-          <Pressable accessibilityRole="button" onPress={() => router.back()}>
-            <ThemedText type="linkPrimary">Back</ThemedText>
+    <PersonalPage title="Private shared receipts">
+      <ThemedText>
+        Upload only photos you want authorized members of this group to see. Sharing requires a
+        synced expense and the private Storage migration. Local photos never upload automatically.
+        Links expire after one minute; refresh to reopen.
+      </ThemedText>
+      {!expense || !userId || !group?.syncUserId ? (
+        <ThemedText>Open a signed-in shared expense to view receipts.</ThemedText>
+      ) : (
+        <>
+          <Pressable
+            accessibilityRole="button"
+            disabled={busy}
+            onPress={() => void run(() => refresh())}>
+            <ThemedText type="linkPrimary">Refresh private receipt links</ThemedText>
           </Pressable>
-          <ThemedText type="subtitle">Private shared receipts</ThemedText>
-          <ThemedText>
-            Upload only photos you want authorized members of this group to see. Sharing requires a
-            synced expense and the private Storage migration. Local photos never upload
-            automatically. Links expire after one minute; refresh to reopen.
-          </ThemedText>
-          {!expense || !userId || !group?.syncUserId ? (
-            <ThemedText>Open a signed-in shared expense to view receipts.</ThemedText>
-          ) : (
-            <>
-              <Pressable
-                accessibilityRole="button"
-                disabled={busy}
-                onPress={() => void run(() => refresh())}>
-                <ThemedText type="linkPrimary">Refresh private receipt links</ThemedText>
-              </Pressable>
-              {receipts.map((receipt) => (
-                <Image
-                  key={receipt.path}
-                  source={{ uri: receipt.url }}
-                  style={{ height: 220 }}
-                  contentFit="contain"
-                  accessibilityLabel="Shared receipt photo"
-                />
-              ))}
-              <Pressable
-                accessibilityRole="button"
-                disabled={busy || offset === 0}
-                onPress={() => void run(() => refresh(Math.max(0, offset - 100)))}>
-                <ThemedText type="linkPrimary">Previous receipt page</ThemedText>
-              </Pressable>
-              <Pressable
-                accessibilityRole="button"
-                disabled={busy || receipts.length < 100}
-                onPress={() => void run(() => refresh(offset + 100))}>
-                <ThemedText type="linkPrimary">Next receipt page</ThemedText>
-              </Pressable>
-              {expense.receipts.map((uri, index) => (
-                <Pressable
-                  key={uri}
-                  accessibilityRole="button"
-                  disabled={busy || !canUpload}
-                  onPress={() => {
-                    Alert.alert(
-                      'Share this receipt photo?',
-                      'The image will be uploaded to your Supabase project and readable by current authorized group members.',
-                      [
-                        { text: 'Cancel', style: 'cancel' },
-                        {
-                          text: 'Upload photo',
-                          onPress: () =>
-                            void run(async () => {
-                              await uploadSharedReceipt(userId, groupId, expenseId, uri);
-                              await refresh();
-                            }),
-                        },
-                      ],
-                    );
-                  }}>
-                  <ThemedText type="linkPrimary">Upload local receipt {index + 1}</ThemedText>
-                </Pressable>
-              ))}
-            </>
-          )}
-          {busy ? <ThemedText>Working…</ThemedText> : null}
-          {error ? <ThemedText accessibilityRole="alert">{error}</ThemedText> : null}
-        </ScrollView>
-      </SafeAreaView>
-    </ThemedView>
+          {receipts.map((receipt) => (
+            <Image
+              key={receipt.path}
+              source={{ uri: receipt.url }}
+              style={{ height: 220 }}
+              contentFit="contain"
+              accessibilityLabel="Shared receipt photo"
+            />
+          ))}
+          <Pressable
+            accessibilityRole="button"
+            disabled={busy || offset === 0}
+            onPress={() => void run(() => refresh(Math.max(0, offset - 100)))}>
+            <ThemedText type="linkPrimary">Previous receipt page</ThemedText>
+          </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            disabled={busy || receipts.length < 100}
+            onPress={() => void run(() => refresh(offset + 100))}>
+            <ThemedText type="linkPrimary">Next receipt page</ThemedText>
+          </Pressable>
+          {expense.receipts.map((uri, index) => (
+            <Pressable
+              key={uri}
+              accessibilityRole="button"
+              disabled={busy || !canUpload}
+              onPress={() => {
+                Alert.alert(
+                  'Share this receipt photo?',
+                  'The image will be uploaded to your Supabase project and readable by current authorized group members.',
+                  [
+                    { text: 'Cancel', style: 'cancel' },
+                    {
+                      text: 'Upload photo',
+                      onPress: () =>
+                        void run(async () => {
+                          await uploadSharedReceipt(userId, groupId, expenseId, uri);
+                          await refresh();
+                        }),
+                    },
+                  ],
+                );
+              }}>
+              <ThemedText type="linkPrimary">Upload local receipt {index + 1}</ThemedText>
+            </Pressable>
+          ))}
+        </>
+      )}
+      {busy ? <ThemedText>Working…</ThemedText> : null}
+      {error ? <ThemedText accessibilityRole="alert">{error}</ThemedText> : null}
+    </PersonalPage>
   );
 }
