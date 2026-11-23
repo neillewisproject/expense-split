@@ -1,7 +1,7 @@
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
-import { Radius, Spacing } from '@/constants/theme';
+import { Radius, ScreenPadding, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 import { Icon, type IconName } from './icon';
@@ -96,8 +96,8 @@ const styles = StyleSheet.create({
   },
   row: { flexDirection: 'row', gap: Spacing.two + Spacing.one },
   wrap: { flexWrap: 'wrap', paddingVertical: Spacing.one },
-  // Room for chip shadows, which a horizontal ScrollView would otherwise clip.
-  scroller: { marginHorizontal: -Spacing.two },
-  scrollContent: { padding: Spacing.two },
+  // Bleed into the page padding so chip shadows are not clipped by the horizontal ScrollView.
+  scroller: { marginHorizontal: -ScreenPadding },
+  scrollContent: { paddingHorizontal: ScreenPadding, paddingVertical: Spacing.three },
   disabled: { opacity: 0.5 },
 });

@@ -74,7 +74,10 @@ export default function SpendingByCategoryScreen() {
             </ThemedText>
           </Card>
         ) : (
-          <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+          <ScrollView
+            style={styles.scroll}
+            contentContainerStyle={styles.content}
+            showsVerticalScrollIndicator={false}>
             <Card style={styles.chartCard}>
               {positiveTotal > 0 ? (
                 <View
@@ -156,8 +159,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.four,
     paddingTop: Spacing.three,
   },
+  // Extend the ScrollView to the screen edges and pad inside it so the card shadow isn't clipped.
+  scroll: { marginHorizontal: -Spacing.four },
   content: {
-    paddingBottom: Spacing.four,
+    padding: Spacing.four,
+    paddingTop: Spacing.two,
   },
   chartCard: {
     gap: Spacing.four,

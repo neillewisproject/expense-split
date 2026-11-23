@@ -1,43 +1,27 @@
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
-import { BottomTabInset, Radius, Spacing, ScreenPadding } from '@/constants/theme';
+import { ScreenPadding, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
-import { Icon, type IconName } from './icon';
+import { Button } from './button';
+import { type IconName } from './icon';
 import { neu } from './neu';
 
-/** Floating primary action, pinned above the tab bar on tab screens. */
+/** Floating primary action: the standard primary Button, pinned just above the tab bar. */
 export function Fab({
   label,
   onPress,
   icon = 'add',
-  tabBar = true,
 }: {
   label: string;
   onPress: () => void;
   icon?: IconName;
-  tabBar?: boolean;
 }) {
-  const theme = useTheme();
   return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      onPress={onPress}
-      style={({ pressed }) => [
-        styles.fab,
-        {
-          backgroundColor: theme.accentFill,
-          bottom: (tabBar ? BottomTabInset : 0) + Spacing.three,
-        },
-        neu(theme, pressed ? 'insetSm' : 'glow'),
-      ]}>
-      <Icon name={icon} size={20} color={theme.onAccent} />
-      <ThemedText type="smallBold" style={{ color: theme.onAccent }}>
-        {label}
-      </ThemedText>
-    </Pressable>
+    <View pointerEvents="box-none" style={styles.fab}>
+      <Button label={label} icon={icon} onPress={onPress} style={styles.button} />
+    </View>
   );
 }
 
@@ -75,15 +59,7 @@ export function Avatar({ name, size = 40 }: { name: string; size?: number }) {
 }
 
 const styles = StyleSheet.create({
-  fab: {
-    position: 'absolute',
-    right: ScreenPadding,
-    minHeight: 54,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.two,
-    paddingHorizontal: Spacing.four,
-    borderRadius: Radius.pill,
-  },
+  fab: { position: 'absolute', right: ScreenPadding, bottom: Spacing.three },
+  button: { paddingHorizontal: Spacing.four + Spacing.one },
   avatar: { alignItems: 'center', justifyContent: 'center', borderWidth: 2 },
 });

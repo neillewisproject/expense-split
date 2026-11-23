@@ -13,7 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Banner, Button, IconButton, inputWell } from '@/components/ui';
-import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
+import { MaxContentWidth, Radius, ScreenPadding, Spacing } from '@/constants/theme';
 import { useGroupsStore } from '@/features/groups/store';
 import { useAuth } from '@/features/auth/auth-provider';
 import { useTheme } from '@/hooks/use-theme';
@@ -133,23 +133,25 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     maxWidth: MaxContentWidth,
-    paddingHorizontal: Spacing.four,
-    paddingTop: Spacing.three,
+    paddingTop: Spacing.two,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: Spacing.four,
+    paddingHorizontal: ScreenPadding,
+    marginBottom: Spacing.two,
   },
   headerSpacer: {
-    width: 40,
+    width: 44,
   },
   keyboardAvoidingView: {
     flex: 1,
   },
   form: {
-    gap: Spacing.three,
+    gap: Spacing.four,
+    padding: ScreenPadding,
+    paddingTop: Spacing.two,
     paddingBottom: Spacing.five,
   },
   field: {

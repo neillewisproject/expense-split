@@ -241,7 +241,7 @@ function HeroStat({ label, value }: { label: string; value: string }) {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  content: { paddingBottom: 160 },
+  content: { paddingBottom: 96 },
   header: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
   headerText: { flex: 1 },
   heroShell: { borderRadius: Radius.xl },

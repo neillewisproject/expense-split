@@ -12,7 +12,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
-import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
+import { MaxContentWidth, Radius, ScreenPadding, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 import { IconButton } from './button';
@@ -118,7 +118,6 @@ const styles = StyleSheet.create({
     maxHeight: '88%',
     borderTopLeftRadius: Radius.xl,
     borderTopRightRadius: Radius.xl,
-    paddingHorizontal: Spacing.three,
   },
   handle: {
     alignSelf: 'center',
@@ -131,10 +130,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: Spacing.two,
+    paddingHorizontal: ScreenPadding,
   },
   title: { flex: 1 },
-  content: { gap: Spacing.three, padding: Spacing.one, paddingBottom: Spacing.three },
-  footer: { paddingVertical: Spacing.two, gap: Spacing.two },
+  // Padding lives inside the ScrollView so shadows of chips and buttons are not clipped.
+  content: { gap: Spacing.three, padding: ScreenPadding, paddingTop: Spacing.two },
+  footer: { padding: ScreenPadding, paddingTop: Spacing.two, gap: Spacing.two },
   search: {
     minHeight: 48,
     flexDirection: 'row',

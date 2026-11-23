@@ -11,7 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
-import { BottomTabInset, MaxContentWidth, Spacing, ScreenPadding } from '@/constants/theme';
+import { MaxContentWidth, Spacing, ScreenPadding } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 import { IconButton } from './button';
@@ -67,7 +67,7 @@ export function Screen({
   contentStyle?: StyleProp<ViewStyle>;
 }) {
   const theme = useTheme();
-  const bottom = tabBar ? BottomTabInset + Spacing.three : Spacing.five;
+  const bottom = tabBar ? Spacing.four : Spacing.five;
   return (
     <View style={[styles.root, { backgroundColor: theme.background }]}>
       <SafeAreaView style={styles.safe} edges={tabBar ? ['top'] : ['top', 'bottom']}>

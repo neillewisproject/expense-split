@@ -35,7 +35,7 @@ src/
   app/                 # ROUTES ONLY. Every file is a screen (Expo Router).
     _layout.tsx        #   root stack, theme, modal presentation
     (app)/             #   protected application routes
-      (tabs)/          #   native Home, Activity, Groups, Insights and More tabs
+      (tabs)/          #   Home, Activity, Groups, Insights, More (custom neumorphic tab bar)
       add-expense.tsx  #   add/edit modal form
       expenses/[id].tsx #  expense detail route
     (auth)/            #   sign-in and callback routes

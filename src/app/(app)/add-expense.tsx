@@ -6,7 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { IconButton } from '@/components/ui';
-import { MaxContentWidth, Spacing } from '@/constants/theme';
+import { MaxContentWidth, ScreenPadding, Spacing } from '@/constants/theme';
 import {
   ExpenseForm,
   createDefaultExpenseValues,
@@ -109,7 +109,7 @@ export default function AddExpenseScreen() {
   if (id && (status === 'idle' || status === 'loading')) {
     return (
       <ThemedView style={styles.container}>
-        <SafeAreaView style={styles.safeArea}>
+        <SafeAreaView style={[styles.safeArea, styles.padded]}>
           <ThemedText>Loading expense…</ThemedText>
         </SafeAreaView>
       </ThemedView>
@@ -119,7 +119,7 @@ export default function AddExpenseScreen() {
   if (id && !expense) {
     return (
       <ThemedView style={styles.container}>
-        <SafeAreaView style={styles.safeArea}>
+        <SafeAreaView style={[styles.safeArea, styles.padded]}>
           <ThemedText type="subtitle">Expense not found</ThemedText>
           <Pressable accessibilityRole="button" onPress={() => router.back()}>
             <ThemedText type="linkPrimary">Go back</ThemedText>
@@ -179,16 +179,17 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     maxWidth: MaxContentWidth,
-    paddingHorizontal: Spacing.three,
     paddingTop: Spacing.two,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: Spacing.three,
+    paddingHorizontal: ScreenPadding,
+    marginBottom: Spacing.two,
   },
   headerSpacer: {
-    width: 42,
+    width: 44,
   },
+  padded: { paddingHorizontal: ScreenPadding },
 });

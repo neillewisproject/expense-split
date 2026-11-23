@@ -84,8 +84,3 @@ export function Icon({
     />
   );
 }
-
-/** Native tab bars take raw symbol names rather than React elements. */
-export function tabSymbol(name: IconName) {
-  return { sf: ICONS[name].ios, md: ICONS[name].android };
-}

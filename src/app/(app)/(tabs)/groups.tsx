@@ -17,7 +17,7 @@ import {
   Screen,
   ScreenHeader,
 } from '@/components/ui';
-import { BottomTabInset, Radius, Spacing, ScreenPadding } from '@/constants/theme';
+import { Radius, Spacing, ScreenPadding } from '@/constants/theme';
 import { useAuth } from '@/features/auth/auth-provider';
 import { sharedGroupsQueryKey } from '@/features/groups/components/group-cloud-sync';
 import type { GroupWithDetails } from '@/features/groups/domain/group';
@@ -167,7 +167,7 @@ function GroupCard({ group }: { group: GroupWithDetails }) {
 const styles = StyleSheet.create({
   root: { flex: 1 },
   header: { gap: Spacing.three, paddingBottom: Spacing.four },
-  listContent: { flexGrow: 1, padding: ScreenPadding, paddingBottom: BottomTabInset + 96 },
+  listContent: { flexGrow: 1, padding: ScreenPadding, paddingBottom: 96 },
   separator: { height: Spacing.three + Spacing.one },
   card: {
     flexDirection: 'row',

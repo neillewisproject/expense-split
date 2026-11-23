@@ -103,7 +103,6 @@ export const Spacing = {
   six: 64,
 } as const;
 
-export const BottomTabInset = Platform.select({ ios: 50, android: 80 }) ?? 0;
 export const MaxContentWidth = 800;
 /** Horizontal page padding; wide enough that neumorphic shadows are not cut off at the edges. */
 export const ScreenPadding = 20;

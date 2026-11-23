@@ -13,7 +13,7 @@ import {
 
 import { ThemedText } from '@/components/themed-text';
 import { Banner, Button, Card, Chip, inputWell, neu } from '@/components/ui';
-import { Radius, Spacing } from '@/constants/theme';
+import { Radius, ScreenPadding, Spacing } from '@/constants/theme';
 import {
   EXPENSE_CATEGORIES,
   expenseFormSchema,
@@ -114,7 +114,7 @@ export function ExpenseForm({
                     }}
                     style={[
                       styles.segment,
-                      checked && [{ backgroundColor: theme.accentFill }, neu(theme, 'glow')],
+                      checked && [{ backgroundColor: theme.accentFill }, neu(theme, 'glowSm')],
                     ]}>
                     <ThemedText
                       type="smallBold"
@@ -394,7 +394,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    gap: Spacing.three,
+    gap: Spacing.four,
+    padding: ScreenPadding,
+    paddingTop: Spacing.two,
     paddingBottom: Spacing.five,
   },
   field: {

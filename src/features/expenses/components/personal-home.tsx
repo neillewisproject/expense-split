@@ -18,7 +18,7 @@ import {
   SectionHeader,
   Sheet,
 } from '@/components/ui';
-import { BottomTabInset, Radius, Spacing, ScreenPadding } from '@/constants/theme';
+import { Radius, Spacing, ScreenPadding } from '@/constants/theme';
 import { prepareBulkChange, type BulkAction } from '@/features/accounts/domain/bulk';
 import { usePersonalStore } from '@/features/accounts/store';
 import { useDueRecurring } from '@/features/recurrence/use-due-recurring';
@@ -253,7 +253,7 @@ function PersonalLedger({
         onPress={() => setPageSize(pageSize + 50)}
       />
     ) : undefined;
-  const listInset = BottomTabInset + (selecting ? 150 : 96);
+  const listInset = selecting ? 120 : 96;
 
   const header = (
     <View style={styles.listHeader}>
@@ -392,7 +392,7 @@ function PersonalLedger({
         <View
           style={[
             styles.bulkBar,
-            { backgroundColor: theme.card, bottom: BottomTabInset },
+            { backgroundColor: theme.card, bottom: 0 },
             neu(theme, 'raised'),
           ]}>
           <ThemedText type="smallBold" style={styles.bulkCount}>
