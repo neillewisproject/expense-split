@@ -43,7 +43,7 @@ npm run test:database     # SQLite upgrades and isolated PostgreSQL/RLS; no live
 npx expo export --platform android # validate the Android JS bundle, not a device test
 ```
 
-Run the smallest relevant tests first. Run `npm run check` before completing code changes. For changes to native imports, routing, or bundling, also export Android. Documentation/configuration-only changes need formatting and configuration validation, not an unnecessary app rebuild. Never describe a bundle export as on-device verification.
+Run only targeted checks (typecheck and the touched test files) while developing; the user prefers not to wait for the full suite repeatedly. When all requested work is done, run `npm run check` once. For changes to native imports, routing, or bundling, also export Android. Documentation/configuration-only changes need formatting and configuration validation, not an unnecessary app rebuild. Never describe a bundle export as on-device verification.
 
 ## Engineering invariants
 
@@ -68,6 +68,16 @@ Run the smallest relevant tests first. Run `npm run check` before completing cod
 ## AI customization
 
 This file is the shared project context. Copilot discovery files live in `.github/`: path-specific instructions in `instructions/`, selectable roles in `agents/`, and on-demand workflows in `skills/`. Read the relevant instructions and use a matching skill when available. Agents are optional roles, not a mandatory delegation pipeline. See the README for activation and examples.
+
+Path-specific instructions:
+
+- `workflow.instructions.md` (all files): validation cadence, Windows editing pitfalls, reporting.
+- `ui-design-system.instructions.md`: neumorphic tokens, depth, shadow clipping, components, tab bar.
+- `mobile.instructions.md`: routing, state selectors, effects, guest navigation.
+- `native-runtime.instructions.md`: Hermes vs Node differences, Expo Go limits, web, deep links.
+- `auth.instructions.md`: email OTP, PKCE link handling, SecureStore, dashboard setup.
+- `data.instructions.md` and `schema-and-backups.instructions.md`: domain, sync, migrations, backup versioning.
+- `tests.instructions.md`: Jest/RNTL conventions and project-specific mocking gotchas.
 
 ## Navigation & Routing
 

@@ -79,7 +79,7 @@ Add packages with `npx expo install <package>` so versions match the Expo SDK.
 The repository includes a Copilot-first setup tailored to this stack. It does not install plugins, change models, grant permissions, or run deployments.
 
 - **Shared instructions:** [AGENTS.md](./AGENTS.md) defines architecture, data invariants, SDK documentation checks, validation, and safety boundaries.
-- **Copilot instructions:** [.github/copilot-instructions.md](./.github/copilot-instructions.md) points to the shared context. Files in [.github/instructions/](./.github/instructions/) add mobile, data, and test guidance when their paths match.
+- **Copilot instructions:** [.github/copilot-instructions.md](./.github/copilot-instructions.md) points to the shared context. Files in [.github/instructions/](./.github/instructions/) load automatically when their paths match: workflow (all files), UI design system, mobile, native runtime, auth, data, schema and backups, and tests. They record the project's conventions and the bugs already found, such as shadow clipping, Hermes `BigInt` formatting, SecureStore keys and PKCE link handling.
 - **Agents:** [Mobile Builder](./.github/agents/mobile-builder.agent.md) implements features/fixes; [Mobile Reviewer](./.github/agents/mobile-reviewer.agent.md) and [Learning Coach](./.github/agents/learning-coach.agent.md) use read/search tools only. Agent formats/tool enforcement differ between AI clients; this configuration targets Copilot.
 - **Skills:** [expo-debug](./.github/skills/expo-debug/SKILL.md), [local-first-sync](./.github/skills/local-first-sync/SKILL.md), and [milestone-delivery](./.github/skills/milestone-delivery/SKILL.md) are task-specific workflows, loaded on demand rather than repeating everything in every request.
 
