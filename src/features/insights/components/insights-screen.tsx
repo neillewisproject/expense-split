@@ -8,6 +8,7 @@ import {
   Divider,
   IconBadge,
   ListRow,
+  neu,
   Screen,
   ScreenHeader,
   SectionHeader,
@@ -15,7 +16,7 @@ import {
 } from '@/components/ui';
 import { Radius, Spacing } from '@/constants/theme';
 import { usePersonalStore } from '@/features/accounts/store';
-import { categoryStyle, tint } from '@/features/expenses/components/category-style';
+import { categoryStyle } from '@/features/expenses/components/category-style';
 import { categoryLabel, localDate } from '@/features/expenses/domain/expense';
 import { formatMoney } from '@/features/expenses/domain/money';
 import { useExpensesStore } from '@/features/expenses/store';
@@ -87,18 +88,18 @@ export function InsightsScreen() {
             const visual = categoryStyle(item.category);
             return (
               <View key={item.category} style={styles.category}>
-                <IconBadge
-                  icon={visual.icon}
-                  color={visual.color}
-                  background={tint(visual.color)}
-                  size={36}
-                />
+                <IconBadge icon={visual.icon} color={visual.color} size={36} />
                 <View style={styles.categoryBody}>
                   <View style={styles.categoryText}>
                     <ThemedText type="smallBold">{categoryLabel(item.category)}</ThemedText>
                     <ThemedText type="smallBold">{formatMoney(item.amount, currency)}</ThemedText>
                   </View>
-                  <View style={[styles.track, { backgroundColor: theme.backgroundElement }]}>
+                  <View
+                    style={[
+                      styles.track,
+                      { backgroundColor: theme.background },
+                      neu(theme, 'insetSm'),
+                    ]}>
                     <View
                       style={[
                         styles.bar,
@@ -147,6 +148,6 @@ const styles = StyleSheet.create({
   },
   categoryBody: { flex: 1, gap: Spacing.one },
   categoryText: { flexDirection: 'row', justifyContent: 'space-between', gap: Spacing.two },
-  track: { height: 8, borderRadius: Radius.pill, overflow: 'hidden' },
-  bar: { height: 8, borderRadius: Radius.pill },
+  track: { height: 12, borderRadius: Radius.pill, overflow: 'hidden', padding: 2 },
+  bar: { height: '100%', borderRadius: Radius.pill },
 });

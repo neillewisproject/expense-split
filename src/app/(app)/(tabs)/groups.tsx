@@ -13,10 +13,11 @@ import {
   Fab,
   Icon,
   ListRow,
+  neu,
   Screen,
   ScreenHeader,
 } from '@/components/ui';
-import { BottomTabInset, Radius, Spacing } from '@/constants/theme';
+import { BottomTabInset, Radius, Spacing, ScreenPadding } from '@/constants/theme';
 import { useAuth } from '@/features/auth/auth-provider';
 import { sharedGroupsQueryKey } from '@/features/groups/components/group-cloud-sync';
 import type { GroupWithDetails } from '@/features/groups/domain/group';
@@ -138,10 +139,8 @@ function GroupCard({ group }: { group: GroupWithDetails }) {
       onPress={() => router.push({ pathname: '/groups/[id]', params: { id: group.id } })}
       style={({ pressed }) => [
         styles.card,
-        {
-          backgroundColor: pressed ? theme.backgroundElement : theme.card,
-          borderColor: theme.border,
-        },
+        { backgroundColor: theme.card },
+        neu(theme, pressed ? 'inset' : 'raised'),
         group.archivedAt && styles.archived,
       ]}>
       <Avatar name={group.name} size={48} />
@@ -167,16 +166,15 @@ function GroupCard({ group }: { group: GroupWithDetails }) {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  header: { gap: Spacing.two, paddingBottom: Spacing.three },
-  listContent: { flexGrow: 1, paddingBottom: BottomTabInset + 96 },
-  separator: { height: Spacing.two },
+  header: { gap: Spacing.three, paddingBottom: Spacing.four },
+  listContent: { flexGrow: 1, padding: ScreenPadding, paddingBottom: BottomTabInset + 96 },
+  separator: { height: Spacing.three + Spacing.one },
   card: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.three,
-    padding: Spacing.three,
-    borderRadius: Radius.lg,
-    borderWidth: StyleSheet.hairlineWidth,
+    padding: Spacing.three + Spacing.one,
+    borderRadius: Radius.xl,
   },
   archived: { opacity: 0.6 },
   cardBody: { flex: 1, minWidth: 0, gap: 2 },

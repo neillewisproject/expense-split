@@ -1,23 +1,16 @@
 import type { IconName } from '@/components/ui';
 
+// Warm, earthy hues that stay readable (≥3:1) as icons on the cream and dark surfaces.
 const CATEGORY_STYLES: Record<string, { icon: IconName; color: string }> = {
-  food: { icon: 'food', color: '#E04F16' },
-  transport: { icon: 'transport', color: '#1570EF' },
-  shopping: { icon: 'shopping', color: '#DD2590' },
-  bills: { icon: 'bills', color: '#CA8504' },
-  entertainment: { icon: 'entertainment', color: '#7A5AF8' },
-  other: { icon: 'category', color: '#667085' },
+  food: { icon: 'food', color: '#D9480F' },
+  transport: { icon: 'transport', color: '#0B7285' },
+  shopping: { icon: 'shopping', color: '#C2255C' },
+  bills: { icon: 'bills', color: '#A16207' },
+  entertainment: { icon: 'entertainment', color: '#2B8A3E' },
+  other: { icon: 'category', color: '#7A6A58' },
 };
 
-/** Icon and colour for a category; custom categories share a neutral tag style. */
+/** Icon and colour for a category; custom categories share a rust tag style. */
 export function categoryStyle(category: string): { icon: IconName; color: string } {
-  return CATEGORY_STYLES[category] ?? { icon: 'tag', color: '#0E9384' };
-}
-
-/** Adds alpha to a #RRGGBB colour for soft icon backgrounds. */
-export function tint(color: string, alpha = 0.14): string {
-  const value = Math.round(alpha * 255)
-    .toString(16)
-    .padStart(2, '0');
-  return `${color}${value}`;
+  return CATEGORY_STYLES[category] ?? { icon: 'tag', color: '#9A3412' };
 }

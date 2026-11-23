@@ -11,13 +11,14 @@ import {
   ChipGroup,
   Fab,
   IconButton,
+  neu,
   Screen,
   ScreenHeader,
   SearchBar,
   SectionHeader,
   Sheet,
 } from '@/components/ui';
-import { BottomTabInset, Radius, Spacing } from '@/constants/theme';
+import { BottomTabInset, Radius, Spacing, ScreenPadding } from '@/constants/theme';
 import { prepareBulkChange, type BulkAction } from '@/features/accounts/domain/bulk';
 import { usePersonalStore } from '@/features/accounts/store';
 import { useDueRecurring } from '@/features/recurrence/use-due-recurring';
@@ -349,15 +350,17 @@ function PersonalLedger({
           </>
         }>
         {status === 'loading' && entries.length === 0 ? (
-          <ThemedText themeColor="textSecondary">Loading transactions…</ThemedText>
+          <ThemedText themeColor="textSecondary" style={{ padding: ScreenPadding }}>
+            Loading transactions…
+          </ThemedText>
         ) : selecting ? (
           <FlatList
             data={visible}
             keyExtractor={(entry) => entry.id}
             ListHeaderComponent={header}
             ListFooterComponent={showMore}
-            contentContainerStyle={{ paddingBottom: listInset }}
-            ItemSeparatorComponent={() => <View style={{ height: Spacing.one }} />}
+            contentContainerStyle={{ padding: ScreenPadding, paddingBottom: listInset }}
+            ItemSeparatorComponent={() => <View style={{ height: Spacing.three }} />}
             ListEmptyComponent={
               <EmptyState title="No matching transactions" message="Try clearing your filters." />
             }
@@ -365,6 +368,7 @@ function PersonalLedger({
               <TransactionRow
                 expense={item}
                 role="checkbox"
+                elevated
                 checked={selected.includes(item.id)}
                 disabled={busy}
                 accessibilityLabel={`Select ${item.description}, ${item.date}`}
@@ -388,7 +392,8 @@ function PersonalLedger({
         <View
           style={[
             styles.bulkBar,
-            { backgroundColor: theme.card, borderColor: theme.border, bottom: BottomTabInset },
+            { backgroundColor: theme.card, bottom: BottomTabInset },
+            neu(theme, 'raised'),
           ]}>
           <ThemedText type="smallBold" style={styles.bulkCount}>
             {selected.length} selected
@@ -625,21 +630,15 @@ const styles = StyleSheet.create({
   sheetActions: { flexDirection: 'row', gap: Spacing.two },
   bulkBar: {
     position: 'absolute',
-    left: Spacing.three,
-    right: Spacing.three,
+    left: ScreenPadding,
+    right: ScreenPadding,
     marginBottom: Spacing.three,
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.two,
     padding: Spacing.two,
     paddingLeft: Spacing.three,
-    borderRadius: Radius.lg,
-    borderWidth: StyleSheet.hairlineWidth,
-    elevation: 6,
-    shadowColor: '#101828',
-    shadowOpacity: 0.12,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 4 },
+    borderRadius: Radius.xl,
   },
   bulkCount: { flex: 1 },
 });

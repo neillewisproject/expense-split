@@ -1,10 +1,11 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
-import { BottomTabInset, Radius, Spacing } from '@/constants/theme';
+import { BottomTabInset, Radius, Spacing, ScreenPadding } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 import { Icon, type IconName } from './icon';
+import { neu } from './neu';
 
 /** Floating primary action, pinned above the tab bar on tab screens. */
 export function Fab({
@@ -27,11 +28,10 @@ export function Fab({
       style={({ pressed }) => [
         styles.fab,
         {
-          backgroundColor: theme.accent,
+          backgroundColor: theme.accentFill,
           bottom: (tabBar ? BottomTabInset : 0) + Spacing.three,
-          shadowColor: theme.accent,
         },
-        pressed && styles.pressed,
+        neu(theme, pressed ? 'insetSm' : 'glow'),
       ]}>
       <Icon name={icon} size={20} color={theme.onAccent} />
       <ThemedText type="smallBold" style={{ color: theme.onAccent }}>
@@ -41,9 +41,10 @@ export function Fab({
   );
 }
 
-const AVATAR_COLORS = ['#5B5BD6', '#0E9384', '#DD2590', '#E04F16', '#1570EF', '#7A5AF8'];
+const AVATAR_COLORS = ['#C2410C', '#B45309', '#0F766E', '#BE185D', '#9A3412', '#4D7C0F'];
 
 export function Avatar({ name, size = 40 }: { name: string; size?: number }) {
+  const theme = useTheme();
   const initials =
     name
       .trim()
@@ -62,7 +63,9 @@ export function Avatar({ name, size = 40 }: { name: string; size?: number }) {
           height: size,
           borderRadius: size / 2,
           backgroundColor: AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length],
+          borderColor: theme.card,
         },
+        neu(theme, 'raisedSm'),
       ]}>
       <ThemedText type="smallBold" style={{ color: '#FFFFFF', fontSize: size * 0.38 }}>
         {initials}
@@ -74,18 +77,13 @@ export function Avatar({ name, size = 40 }: { name: string; size?: number }) {
 const styles = StyleSheet.create({
   fab: {
     position: 'absolute',
-    right: Spacing.three,
-    minHeight: 52,
+    right: ScreenPadding,
+    minHeight: 54,
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.two,
     paddingHorizontal: Spacing.four,
     borderRadius: Radius.pill,
-    elevation: 6,
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 6 },
   },
-  pressed: { opacity: 0.85 },
-  avatar: { alignItems: 'center', justifyContent: 'center' },
+  avatar: { alignItems: 'center', justifyContent: 'center', borderWidth: 2 },
 });

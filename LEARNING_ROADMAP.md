@@ -218,9 +218,9 @@ CSV/JSON recovery, explicit description-category suggestions, savings reservatio
 splits/multiple payers/itemized bills, fixed group exchange rates, linked refunds, partial settlements,
 group spending/settlement breakdowns and shareable previews, explicit account-linked group cash snapshots, zoned recurring schedules with optional end dates and
 unposted-commitment reporting, audited edits, a durable revision-checked operation queue, and
-ownership/invitation/access controls. The UI uses a token-based design system
-(`src/components/ui`) with five tabs; read `app-tabs.tsx`, `home-screen.tsx` and `personal-home.tsx`
-to see how screens compose cards, chips, bottom sheets and a floating action button.
+ownership/invitation/access controls. The UI uses a token-based neumorphic design system
+(`src/components/ui`, with depth from `neu.ts`) and five tabs; read `app-tabs.tsx`, `home-screen.tsx`
+and `personal-home.tsx` to see how screens compose cards, chips, bottom sheets and a floating action button.
 
 Continue learning through the [functionality guide and limitations](./README.md#functionality).
 Native OCR, remote push, continuous personal sync, partial/multiple-transaction group cash matching,

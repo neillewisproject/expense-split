@@ -5,7 +5,9 @@ import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 import { Icon, type IconName } from './icon';
+import { neu } from './neu';
 
+/** Raised pill; the selected chip is filled orange so the state never relies on depth alone. */
 export function Chip({
   label,
   selected,
@@ -22,6 +24,7 @@ export function Chip({
   disabled?: boolean;
 }) {
   const theme = useTheme();
+  const color = selected ? theme.onAccent : theme.text;
   return (
     <Pressable
       accessibilityRole={role}
@@ -32,15 +35,12 @@ export function Chip({
       onPress={onPress}
       style={({ pressed }) => [
         styles.chip,
-        {
-          backgroundColor: selected ? theme.accent : theme.card,
-          borderColor: selected ? theme.accent : theme.border,
-        },
+        { backgroundColor: selected ? theme.accentFill : theme.card },
+        neu(theme, pressed ? 'insetSm' : selected ? 'glow' : 'raisedSm'),
         disabled && styles.disabled,
-        pressed && styles.pressed,
       ]}>
-      {icon ? <Icon name={icon} size={16} color={selected ? theme.onAccent : theme.text} /> : null}
-      <ThemedText type="smallBold" style={{ color: selected ? theme.onAccent : theme.text }}>
+      {icon ? <Icon name={icon} size={16} color={selected ? color : theme.accent} /> : null}
+      <ThemedText type="smallBold" style={{ color }}>
         {label}
       </ThemedText>
     </Pressable>
@@ -72,7 +72,8 @@ export function ChipGroup<T extends string>({
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
-      contentContainerStyle={styles.row}
+      style={styles.scroller}
+      contentContainerStyle={[styles.row, styles.scrollContent]}
       accessibilityRole="radiogroup">
       {chips}
     </ScrollView>
@@ -85,17 +86,18 @@ export function ChipGroup<T extends string>({
 
 const styles = StyleSheet.create({
   chip: {
-    minHeight: 38,
+    minHeight: 40,
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.one,
     borderRadius: Radius.pill,
-    borderWidth: 1,
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.one,
   },
-  row: { flexDirection: 'row', gap: Spacing.two },
-  wrap: { flexWrap: 'wrap' },
-  disabled: { opacity: 0.45 },
-  pressed: { opacity: 0.75 },
+  row: { flexDirection: 'row', gap: Spacing.two + Spacing.one },
+  wrap: { flexWrap: 'wrap', paddingVertical: Spacing.one },
+  // Room for chip shadows, which a horizontal ScrollView would otherwise clip.
+  scroller: { marginHorizontal: -Spacing.two },
+  scrollContent: { padding: Spacing.two },
+  disabled: { opacity: 0.5 },
 });

@@ -6,7 +6,7 @@ import { Image } from 'expo-image';
 import { ThemedText } from '@/components/themed-text';
 import { Button, Card, Divider, IconBadge, ListRow, Screen, ScreenHeader } from '@/components/ui';
 import { Radius, Spacing } from '@/constants/theme';
-import { categoryStyle, tint } from '@/features/expenses/components/category-style';
+import { categoryStyle } from '@/features/expenses/components/category-style';
 import { useAmountStyle } from '@/features/expenses/components/expense-list';
 import { formatExpenseDate } from '@/features/expenses/components/expense-form';
 import type { StoredExpense } from '@/features/expenses/data/schema';
@@ -185,12 +185,7 @@ function Summary({ expense }: { expense: StoredExpense }) {
   const type = expense.entryType ?? 'expense';
   return (
     <Card style={styles.summary}>
-      <IconBadge
-        icon={visual.icon}
-        color={visual.color}
-        background={tint(visual.color)}
-        size={56}
-      />
+      <IconBadge icon={visual.icon} color={visual.color} size={56} />
       <ThemedText type="heading" style={styles.center}>
         {expense.description}
       </ThemedText>

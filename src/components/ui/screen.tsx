@@ -11,7 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import { BottomTabInset, MaxContentWidth, Spacing, ScreenPadding } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 import { IconButton } from './button';
@@ -106,7 +106,7 @@ export function SectionHeader({ title, action }: { title: string; action?: React
 const styles = StyleSheet.create({
   root: { flex: 1 },
   safe: { flex: 1, width: '100%', maxWidth: MaxContentWidth, alignSelf: 'center' },
-  headerWrap: { paddingHorizontal: Spacing.three, paddingTop: Spacing.two },
+  headerWrap: { paddingHorizontal: ScreenPadding, paddingTop: Spacing.two },
   header: {
     minHeight: 52,
     flexDirection: 'row',
@@ -116,8 +116,9 @@ const styles = StyleSheet.create({
   },
   headerText: { flex: 1, minWidth: 0 },
   headerActions: { flexDirection: 'row', gap: Spacing.two },
-  content: { gap: Spacing.three, padding: Spacing.three },
-  fixed: { paddingHorizontal: Spacing.three, gap: Spacing.two },
+  content: { gap: ScreenPadding, padding: ScreenPadding },
+  // Lists pad their own content so card shadows are not clipped at the list edge.
+  fixed: { gap: Spacing.two },
   section: {
     flexDirection: 'row',
     alignItems: 'center',

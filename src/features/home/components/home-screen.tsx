@@ -11,6 +11,7 @@ import {
   Fab,
   IconBadge,
   IconButton,
+  neu,
   Screen,
   SectionHeader,
   type IconName,
@@ -99,39 +100,45 @@ export function HomeScreen() {
           />
         </View>
 
-        <LinearGradient
-          colors={HeroGradient}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.hero}>
-          <ThemedText type="small" style={styles.heroLabel}>
-            Spent in {monthName}
-          </ThemedText>
-          {summary.report ? (
-            <>
-              <ThemedText style={styles.heroAmount} numberOfLines={1} adjustsFontSizeToFit>
-                {formatMoney(summary.report.spending, summary.currency)}
-              </ThemedText>
-              <View style={styles.heroStats}>
-                <HeroStat
-                  label="Income"
-                  value={formatMoney(summary.report.income, summary.currency)}
-                />
-                <View style={styles.heroDivider} />
-                <HeroStat label="Net" value={formatMoney(summary.report.net, summary.currency)} />
-                <View style={styles.heroDivider} />
-                <HeroStat label="Transactions" value={String(summary.report.count)} />
-              </View>
-              {summary.others.length ? (
-                <ThemedText type="caption" style={styles.heroLabel}>
-                  Also spent {summary.others.join(' · ')}
+        <View style={[styles.heroShell, neu(theme, 'glow')]}>
+          <LinearGradient
+            colors={HeroGradient}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.hero}>
+            <View style={[styles.bubble, styles.bubbleLarge]} />
+            <View style={[styles.bubble, styles.bubbleSmall]} />
+            <ThemedText type="small" style={styles.heroLabel}>
+              Spent in {monthName}
+            </ThemedText>
+            {summary.report ? (
+              <>
+                <ThemedText style={styles.heroAmount} numberOfLines={1} adjustsFontSizeToFit>
+                  {formatMoney(summary.report.spending, summary.currency)}
                 </ThemedText>
-              ) : null}
-            </>
-          ) : (
-            <ThemedText style={styles.heroLabel}>{summary.error}</ThemedText>
-          )}
-        </LinearGradient>
+                <ThemedText type="caption" style={styles.heroLabel}>
+                  {summary.report.count}{' '}
+                  {summary.report.count === 1 ? 'transaction' : 'transactions'} this month
+                </ThemedText>
+                <View style={styles.heroStats}>
+                  <HeroStat
+                    label="Income"
+                    value={formatMoney(summary.report.income, summary.currency)}
+                  />
+                  <View style={styles.heroDivider} />
+                  <HeroStat label="Net" value={formatMoney(summary.report.net, summary.currency)} />
+                </View>
+                {summary.others.length ? (
+                  <ThemedText type="caption" style={styles.heroLabel}>
+                    Also spent {summary.others.join(' · ')}
+                  </ThemedText>
+                ) : null}
+              </>
+            ) : (
+              <ThemedText style={styles.heroLabel}>{summary.error}</ThemedText>
+            )}
+          </LinearGradient>
+        </View>
 
         {pending ? (
           <Banner
@@ -159,8 +166,8 @@ export function HomeScreen() {
               onPress={() => router.push(action.route)}
               style={({ pressed }) => [
                 styles.quickAction,
-                { backgroundColor: theme.card, borderColor: theme.border },
-                pressed && { opacity: 0.75 },
+                { backgroundColor: theme.card },
+                neu(theme, pressed ? 'insetSm' : 'raised'),
               ]}>
               <IconBadge icon={action.icon} size={40} />
               <ThemedText type="caption" style={styles.quickLabel}>
@@ -225,7 +232,7 @@ function HeroStat({ label, value }: { label: string; value: string }) {
       <ThemedText type="caption" style={styles.heroLabel}>
         {label}
       </ThemedText>
-      <ThemedText type="smallBold" style={styles.heroValue} numberOfLines={1} adjustsFontSizeToFit>
+      <ThemedText type="heading" style={styles.heroValue} numberOfLines={1} adjustsFontSizeToFit>
         {value}
       </ThemedText>
     </View>
@@ -237,17 +244,22 @@ const styles = StyleSheet.create({
   content: { paddingBottom: 160 },
   header: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
   headerText: { flex: 1 },
+  heroShell: { borderRadius: Radius.xl },
   hero: {
     borderRadius: Radius.xl,
     padding: Spacing.four,
     gap: Spacing.two,
+    overflow: 'hidden',
   },
-  heroLabel: { color: 'rgba(255,255,255,0.82)' },
+  bubble: { position: 'absolute', backgroundColor: 'rgba(255,255,255,0.22)' },
+  bubbleLarge: { width: 180, height: 180, borderRadius: 90, top: -70, right: -50 },
+  bubbleSmall: { width: 90, height: 90, borderRadius: 45, bottom: -30, right: 70 },
+  heroLabel: { color: 'rgba(43,22,0,0.72)' },
   heroAmount: {
-    color: '#FFFFFF',
-    fontSize: 36,
-    lineHeight: 44,
-    fontWeight: 700,
+    color: '#2B1600',
+    fontSize: 38,
+    lineHeight: 46,
+    fontWeight: 800,
     letterSpacing: -0.8,
   },
   heroStats: {
@@ -256,24 +268,23 @@ const styles = StyleSheet.create({
     marginTop: Spacing.two,
     paddingTop: Spacing.three,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: 'rgba(255,255,255,0.35)',
+    borderTopColor: 'rgba(43,22,0,0.22)',
   },
   heroStat: { flex: 1, gap: 2 },
-  heroValue: { color: '#FFFFFF' },
+  heroValue: { color: '#2B1600' },
   heroDivider: {
     width: StyleSheet.hairlineWidth,
     alignSelf: 'stretch',
-    marginHorizontal: Spacing.two,
-    backgroundColor: 'rgba(255,255,255,0.35)',
+    marginHorizontal: Spacing.three,
+    backgroundColor: 'rgba(43,22,0,0.22)',
   },
-  quickActions: { flexDirection: 'row', gap: Spacing.two },
+  quickActions: { flexDirection: 'row', gap: Spacing.three },
   quickAction: {
     flex: 1,
     alignItems: 'center',
     gap: Spacing.two,
     paddingVertical: Spacing.three,
     borderRadius: Radius.lg,
-    borderWidth: StyleSheet.hairlineWidth,
   },
   quickLabel: { fontWeight: 600 },
   empty: { alignItems: 'center', paddingVertical: Spacing.four },

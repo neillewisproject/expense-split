@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
-import { Banner, Button, Card, Chip } from '@/components/ui';
+import { Banner, Button, Card, Chip, inputWell, neu } from '@/components/ui';
 import { Radius, Spacing } from '@/constants/theme';
 import {
   EXPENSE_CATEGORIES,
@@ -76,10 +76,7 @@ export function ExpenseForm({
     entryType ?? 'expense',
   );
 
-  const inputStyle = [
-    styles.input,
-    { color: theme.text, backgroundColor: theme.card, borderColor: theme.border },
-  ];
+  const inputStyle = [styles.input, { color: theme.text }, inputWell(theme)];
   const errorText = (message?: string) =>
     message ? (
       <ThemedText type="caption" accessibilityRole="alert" style={{ color: theme.danger }}>
@@ -102,7 +99,7 @@ export function ExpenseForm({
             <View
               accessibilityRole="radiogroup"
               accessibilityLabel="Transaction type"
-              style={[styles.segments, { backgroundColor: theme.backgroundElement }]}>
+              style={[styles.segments, inputWell(theme)]}>
               {ENTRY_TYPES.map((type) => {
                 const checked = (field.value ?? 'expense') === type;
                 return (
@@ -115,10 +112,13 @@ export function ExpenseForm({
                       setValue('toAccountId', '');
                       setValue('refundOfId', '');
                     }}
-                    style={[styles.segment, checked && { backgroundColor: theme.card }]}>
+                    style={[
+                      styles.segment,
+                      checked && [{ backgroundColor: theme.accentFill }, neu(theme, 'glow')],
+                    ]}>
                     <ThemedText
                       type="smallBold"
-                      style={{ color: checked ? theme.accent : theme.textSecondary }}>
+                      style={{ color: checked ? theme.onAccent : theme.textSecondary }}>
                       {type[0]!.toUpperCase() + type.slice(1)}
                     </ThemedText>
                   </Pressable>
@@ -145,7 +145,8 @@ export function ExpenseForm({
                   onChangeText={(value) => field.onChange(value.toUpperCase())}
                   style={[
                     styles.currency,
-                    { color: theme.accent, backgroundColor: theme.accentSoft },
+                    { color: theme.accent, backgroundColor: theme.card },
+                    neu(theme, 'raisedSm'),
                   ]}
                 />
               )}
@@ -401,9 +402,8 @@ const styles = StyleSheet.create({
   },
   label: { fontWeight: 600 },
   input: {
-    minHeight: 48,
-    borderWidth: 1,
-    borderRadius: Radius.md,
+    minHeight: 50,
+    borderRadius: Radius.lg,
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two,
     fontSize: 16,
@@ -411,25 +411,25 @@ const styles = StyleSheet.create({
   notes: { minHeight: 80, textAlignVertical: 'top' },
   segments: {
     flexDirection: 'row',
-    padding: Spacing.one,
-    borderRadius: Radius.md,
+    padding: Spacing.one + 2,
+    borderRadius: Radius.lg,
     gap: Spacing.one,
   },
   segment: {
     flex: 1,
-    minHeight: 38,
+    minHeight: 40,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: Radius.sm,
+    borderRadius: Radius.md,
   },
-  amountRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
+  amountRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
   currency: {
-    width: 64,
-    minHeight: 40,
+    width: 66,
+    minHeight: 42,
     textAlign: 'center',
     fontSize: 16,
     fontWeight: 700,
-    borderRadius: Radius.sm,
+    borderRadius: Radius.md,
   },
   amount: {
     flex: 1,

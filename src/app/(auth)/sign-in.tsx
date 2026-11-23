@@ -4,7 +4,7 @@ import { ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
-import { Banner, Button, Card, IconBadge } from '@/components/ui';
+import { Banner, Button, Card, IconBadge, inputWell } from '@/components/ui';
 import { Radius, Spacing } from '@/constants/theme';
 import { Field } from '@/features/expenses/components/personal-ui';
 import { useAuth } from '@/features/auth/auth-provider';
@@ -130,14 +130,7 @@ export default function SignInScreen() {
                     onChangeText={setCode}
                     placeholder="123456"
                     placeholderTextColor={theme.textSecondary}
-                    style={[
-                      styles.code,
-                      {
-                        color: theme.text,
-                        backgroundColor: theme.card,
-                        borderColor: theme.border,
-                      },
-                    ]}
+                    style={[styles.code, { color: theme.text }, inputWell(theme)]}
                     textContentType="oneTimeCode"
                     value={code}
                   />
@@ -198,8 +191,7 @@ const styles = StyleSheet.create({
   label: { fontWeight: 600 },
   code: {
     minHeight: 56,
-    borderWidth: 1,
-    borderRadius: Radius.md,
+    borderRadius: Radius.lg,
     paddingHorizontal: Spacing.three,
     fontSize: 24,
     fontWeight: 700,

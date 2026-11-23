@@ -9,7 +9,7 @@ import {
 } from 'expo-router/ui';
 import { Pressable, type PressableProps, View, StyleSheet } from 'react-native';
 
-import { Icon, type IconName } from '@/components/ui';
+import { Icon, neu, type IconName } from '@/components/ui';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
@@ -53,8 +53,7 @@ export function TabButton({
       {...(props as PressableProps)}
       style={({ pressed }) => [
         styles.tabButton,
-        isFocused && { backgroundColor: theme.accentSoft },
-        pressed && styles.pressed,
+        (isFocused || pressed) && [{ backgroundColor: theme.card }, neu(theme, 'insetSm')],
       ]}>
       <Icon name={icon} size={18} color={color} />
       <ThemedText type="smallBold" style={{ color }}>
@@ -68,8 +67,7 @@ export function CustomTabList(props: TabListProps) {
   const theme = useTheme();
   return (
     <View {...props} style={styles.tabListContainer}>
-      <View
-        style={[styles.innerContainer, { backgroundColor: theme.card, borderColor: theme.border }]}>
+      <View style={[styles.innerContainer, { backgroundColor: theme.card }, neu(theme, 'raised')]}>
         {props.children}
       </View>
     </View>
@@ -88,9 +86,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     gap: Spacing.one,
-    padding: Spacing.one,
+    padding: Spacing.two,
     borderRadius: Radius.pill,
-    borderWidth: StyleSheet.hairlineWidth,
     width: '100%',
     maxWidth: MaxContentWidth,
   },
@@ -103,5 +100,4 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.two,
     borderRadius: Radius.pill,
   },
-  pressed: { opacity: 0.7 },
 });

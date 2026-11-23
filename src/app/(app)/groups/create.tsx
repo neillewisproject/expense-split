@@ -12,7 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Banner, Button, IconButton } from '@/components/ui';
+import { Banner, Button, IconButton, inputWell } from '@/components/ui';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { useGroupsStore } from '@/features/groups/store';
 import { useAuth } from '@/features/auth/auth-provider';
@@ -43,10 +43,7 @@ export default function CreateGroupScreen() {
     }
   }
 
-  const inputStyle = [
-    styles.input,
-    { color: theme.text, backgroundColor: theme.card, borderColor: theme.border },
-  ];
+  const inputStyle = [styles.input, { color: theme.text }, inputWell(theme)];
 
   return (
     <ThemedView style={styles.container}>
@@ -160,8 +157,7 @@ const styles = StyleSheet.create({
   },
   input: {
     minHeight: 48,
-    borderWidth: 1,
-    borderRadius: Radius.md,
+    borderRadius: Radius.lg,
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two,
     fontSize: 16,

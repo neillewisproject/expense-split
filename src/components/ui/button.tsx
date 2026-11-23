@@ -11,6 +11,7 @@ import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 import { Icon, type IconName } from './icon';
+import { neu } from './neu';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
 
@@ -35,10 +36,10 @@ export function Button({
 }) {
   const theme = useTheme();
   const palette = {
-    primary: { background: theme.accent, text: theme.onAccent },
-    secondary: { background: theme.accentSoft, text: theme.accent },
+    primary: { background: theme.accentFill, text: theme.onAccent },
+    secondary: { background: theme.card, text: theme.accent },
     ghost: { background: 'transparent', text: theme.accent },
-    danger: { background: theme.dangerSoft, text: theme.danger },
+    danger: { background: theme.card, text: theme.danger },
   }[variant];
   const inactive = disabled || loading;
   return (
@@ -51,9 +52,13 @@ export function Button({
       style={({ pressed }) => [
         styles.button,
         { backgroundColor: palette.background },
-        variant === 'ghost' && styles.ghost,
+        variant === 'ghost'
+          ? styles.ghost
+          : neu(
+              theme,
+              pressed ? 'insetSm' : inactive ? 'flat' : variant === 'primary' ? 'glow' : 'raisedSm',
+            ),
         inactive && styles.disabled,
-        pressed && styles.pressed,
         style,
       ]}>
       {loading ? (
@@ -84,7 +89,6 @@ export function IconButton({
   selected?: boolean;
 }) {
   const theme = useTheme();
-  const active = selected || tone === 'tonal';
   return (
     <Pressable
       accessibilityRole="button"
@@ -95,15 +99,14 @@ export function IconButton({
       onPress={onPress}
       style={({ pressed }) => [
         styles.iconButton,
-        { backgroundColor: selected ? theme.accent : active ? theme.accentSoft : theme.card },
-        !active && { borderColor: theme.border, borderWidth: StyleSheet.hairlineWidth },
+        { backgroundColor: selected ? theme.accentFill : theme.card },
+        neu(theme, pressed ? 'insetSm' : selected ? 'glow' : 'raisedSm'),
         disabled && styles.disabled,
-        pressed && styles.pressed,
       ]}>
       <Icon
         name={icon}
         size={20}
-        color={selected ? theme.onAccent : active ? theme.accent : theme.text}
+        color={selected ? theme.onAccent : tone === 'tonal' ? theme.accent : theme.text}
       />
     </Pressable>
   );
@@ -111,23 +114,22 @@ export function IconButton({
 
 const styles = StyleSheet.create({
   button: {
-    minHeight: 48,
+    minHeight: 50,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: Spacing.two,
-    borderRadius: Radius.md,
-    paddingHorizontal: Spacing.three,
+    borderRadius: Radius.lg,
+    paddingHorizontal: Spacing.four,
     paddingVertical: Spacing.two,
   },
   ghost: { minHeight: 44, paddingHorizontal: Spacing.two },
   iconButton: {
-    width: 42,
-    height: 42,
+    width: 44,
+    height: 44,
     borderRadius: Radius.pill,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  disabled: { opacity: 0.45 },
-  pressed: { opacity: 0.75 },
+  disabled: { opacity: 0.5 },
 });

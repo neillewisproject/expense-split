@@ -11,8 +11,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
-import { Banner, Icon } from '@/components/ui';
-import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
+import { Banner, Icon, neu } from '@/components/ui';
+import { MaxContentWidth, Radius, Spacing, ScreenPadding } from '@/constants/theme';
 import { Field } from '@/features/expenses/components/personal-ui';
 import { useTheme } from '@/hooks/use-theme';
 
@@ -97,7 +97,7 @@ export function GroupButton({
   const theme = useTheme();
   const toggle = selected !== undefined;
   const danger = !toggle && DESTRUCTIVE.test(label);
-  const background = selected ? theme.accent : danger ? theme.dangerSoft : theme.accentSoft;
+  const background = selected ? theme.accentFill : theme.card;
   const color = selected ? theme.onAccent : danger ? theme.danger : theme.accent;
   return (
     <Pressable
@@ -108,8 +108,8 @@ export function GroupButton({
       style={({ pressed }) => [
         styles.button,
         { backgroundColor: background },
+        neu(theme, pressed ? 'insetSm' : disabled ? 'flat' : selected ? 'glow' : 'raisedSm'),
         disabled && styles.disabled,
-        pressed && styles.pressed,
       ]}>
       {toggle ? <Icon name={selected ? 'checked' : 'unchecked'} size={18} color={color} /> : null}
       <ThemedText type="smallBold" style={[styles.label, { color }]}>
@@ -127,7 +127,7 @@ const styles = StyleSheet.create({
   root: { flex: 1 },
   gap: { height: Spacing.three },
   page: {
-    padding: Spacing.three,
+    padding: ScreenPadding,
     paddingBottom: Spacing.six,
     width: '100%',
     maxWidth: MaxContentWidth,
@@ -135,16 +135,15 @@ const styles = StyleSheet.create({
   },
   stack: { gap: Spacing.three },
   button: {
-    minHeight: 48,
+    minHeight: 50,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: Spacing.two,
-    borderRadius: Radius.md,
+    borderRadius: Radius.lg,
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two,
   },
   label: { flexShrink: 1, textAlign: 'center' },
-  disabled: { opacity: 0.45 },
-  pressed: { opacity: 0.75 },
+  disabled: { opacity: 0.5 },
 });

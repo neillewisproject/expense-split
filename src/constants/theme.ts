@@ -9,54 +9,62 @@ import { Platform } from 'react-native';
 
 export const Colors = {
   light: {
-    text: '#101828',
-    textSecondary: '#667085',
-    background: '#F5F6FA',
-    card: '#FFFFFF',
-    backgroundElement: '#EEF0F5',
-    backgroundSelected: '#E2E5EE',
-    border: '#E4E7EC',
-    accent: '#5B5BD6',
-    accentSoft: '#EEEEFC',
-    onAccent: '#FFFFFF',
-    success: '#079455',
-    successSoft: '#E6F6EE',
-    danger: '#D92D20',
-    dangerSoft: '#FDECEA',
-    warning: '#B54708',
-    warningSoft: '#FEF3E2',
+    text: '#2E2620',
+    textSecondary: '#6E6052',
+    background: '#F0EAE2',
+    card: '#F0EAE2',
+    backgroundElement: '#E7DFD4',
+    backgroundSelected: '#DDD3C6',
+    border: '#E2D9CD',
+    shadowDark: '#D3C7B7',
+    shadowLight: '#FFFFFF',
+    accent: '#A3480B',
+    accentFill: '#FF8A1F',
+    accentGlow: 'rgba(255, 138, 31, 0.38)',
+    accentSoft: '#FBE2C6',
+    onAccent: '#2B1600',
+    success: '#2B7A3D',
+    successSoft: '#DCEFD9',
+    danger: '#B93229',
+    dangerSoft: '#F8DDD7',
+    warning: '#8F5300',
+    warningSoft: '#FBE8C4',
   },
   dark: {
-    text: '#F2F4F7',
-    textSecondary: '#98A2B3',
-    background: '#0B0D12',
-    card: '#161922',
-    backgroundElement: '#1F2330',
-    backgroundSelected: '#2B3040',
-    border: '#262B38',
-    accent: '#8484F5',
-    accentSoft: '#25254A',
-    onAccent: '#FFFFFF',
-    success: '#47CD89',
-    successSoft: '#10291C',
-    danger: '#F97066',
-    dangerSoft: '#3A1613',
-    warning: '#FDB022',
-    warningSoft: '#33250B',
+    text: '#F5EDE3',
+    textSecondary: '#BFB1A2',
+    background: '#2A2520',
+    card: '#2A2520',
+    backgroundElement: '#332D27',
+    backgroundSelected: '#3D362F',
+    border: '#3A332C',
+    shadowDark: '#1A1613',
+    shadowLight: '#3A332C',
+    accent: '#FFB25C',
+    accentFill: '#FF9A2E',
+    accentGlow: 'rgba(255, 154, 46, 0.28)',
+    accentSoft: '#4A3420',
+    onAccent: '#2B1600',
+    success: '#6CCB7E',
+    successSoft: '#1F3322',
+    danger: '#FF8A7A',
+    dangerSoft: '#45221D',
+    warning: '#FFC757',
+    warningSoft: '#43341A',
   },
 } as const;
 
 export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
 export type ThemeColors = (typeof Colors)[keyof typeof Colors];
 
-/** Gradient used by the hero summary card; readable with white text in both colour schemes. */
-export const HeroGradient = ['#5B5BD6', '#8B4FD8'] as const;
+/** Sunrise gradient for the hero card and logo; pair it with `onAccent` (dark) text. */
+export const HeroGradient = ['#FFD166', '#FFA53D', '#FF7F1F'] as const;
 
 export const Radius = {
-  sm: 8,
-  md: 12,
-  lg: 16,
-  xl: 24,
+  sm: 10,
+  md: 14,
+  lg: 18,
+  xl: 26,
   pill: 999,
 } as const;
 
@@ -97,3 +105,5 @@ export const Spacing = {
 
 export const BottomTabInset = Platform.select({ ios: 50, android: 80 }) ?? 0;
 export const MaxContentWidth = 800;
+/** Horizontal page padding; wide enough that neumorphic shadows are not cut off at the edges. */
+export const ScreenPadding = 20;

@@ -5,14 +5,14 @@ import Animated, { FadeInDown, FadeOutUp, LinearTransition } from 'react-native-
 
 import { EmptyState } from '@/components/empty-state';
 import { ThemedText } from '@/components/themed-text';
-import { Icon, IconBadge } from '@/components/ui';
-import { Radius, Spacing } from '@/constants/theme';
+import { Icon, IconBadge, neu } from '@/components/ui';
+import { Radius, Spacing, ScreenPadding } from '@/constants/theme';
 import type { StoredExpense } from '@/features/expenses/data/schema';
 import { categoryLabel, localDate } from '@/features/expenses/domain/expense';
 import { formatMoney } from '@/features/expenses/domain/money';
 import { useTheme } from '@/hooks/use-theme';
 
-import { categoryStyle, tint } from './category-style';
+import { categoryStyle } from './category-style';
 
 type ExpenseListProps = {
   expenses: StoredExpense[];
@@ -23,19 +23,16 @@ type ExpenseListProps = {
   bottomInset?: number;
 };
 
-type Position = { first: boolean; last: boolean };
 type ExpenseListRow =
   | { type: 'day'; key: string; date: string }
-  | ({ type: 'expense'; key: string; expense: StoredExpense } & Position);
+  | { type: 'expense'; key: string; expense: StoredExpense };
 
 function toListRows(expenses: StoredExpense[]): ExpenseListRow[] {
   const rows: ExpenseListRow[] = [];
   expenses.forEach((expense, index) => {
-    const first = expense.date !== expenses[index - 1]?.date;
-    if (first)
+    if (expense.date !== expenses[index - 1]?.date)
       rows.push({ type: 'day', key: `day-${expense.date}-${rows.length}`, date: expense.date });
-    const last = expense.date !== expenses[index + 1]?.date;
-    rows.push({ type: 'expense', key: expense.id, expense, first, last });
+    rows.push({ type: 'expense', key: expense.id, expense });
   });
   return rows;
 }
@@ -75,7 +72,7 @@ export function TransactionRow({
   role = 'button',
   checked,
   disabled = false,
-  position = { first: true, last: true },
+  elevated = false,
 }: {
   expense: StoredExpense;
   onPress: () => void;
@@ -83,20 +80,19 @@ export function TransactionRow({
   role?: 'button' | 'checkbox';
   checked?: boolean;
   disabled?: boolean;
-  position?: Position;
+  /** Draw the row as its own raised card (used when it is not inside a Card). */
+  elevated?: boolean;
 }) {
   const theme = useTheme();
   const type = expense.entryType ?? 'expense';
   const amount = useAmountStyle(expense);
   const visual =
     type === 'transfer'
-      ? { icon: 'transfer' as const, color: '#667085' }
+      ? { icon: 'transfer' as const, color: '#7A6A58' }
       : type === 'income'
         ? { icon: 'income' as const, color: theme.success }
         : categoryStyle(expense.category);
-  let leading: ReactNode = (
-    <IconBadge icon={visual.icon} color={visual.color} background={tint(visual.color)} />
-  );
+  let leading: ReactNode = <IconBadge icon={visual.icon} color={visual.color} />;
   if (role === 'checkbox')
     leading = (
       <Icon
@@ -117,9 +113,9 @@ export function TransactionRow({
       onPress={onPress}
       style={({ pressed }) => [
         styles.row,
-        { backgroundColor: pressed ? theme.backgroundElement : theme.card },
-        position.first && styles.first,
-        position.last && styles.last,
+        { backgroundColor: theme.card },
+        pressed && { backgroundColor: theme.backgroundElement },
+        elevated && [styles.rounded, neu(theme, pressed ? 'insetSm' : 'raisedSm')],
       ]}>
       {leading}
       <View style={styles.description}>
@@ -186,38 +182,28 @@ export function ExpenseList({
             entering={FadeInDown.duration(180)}
             exiting={FadeOutUp.duration(150)}
             layout={LinearTransition.springify()}
-            style={[
-              styles.cell,
-              item.first && styles.first,
-              item.last && styles.last,
-              !item.last && {
-                borderBottomColor: theme.border,
-                borderBottomWidth: StyleSheet.hairlineWidth,
-              },
-            ]}>
-            <ReanimatedSwipeable
-              overshootRight={false}
-              renderRightActions={() => (
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={`${restoring ? 'Restore' : 'Delete'} ${item.expense.description}`}
-                  onPress={() => onDelete(item.expense.id)}
-                  style={[
-                    styles.swipeAction,
-                    { backgroundColor: restoring ? theme.success : theme.danger },
-                  ]}>
-                  <Icon name={restoring ? 'restore' : 'trash'} size={20} color="#FFFFFF" />
-                  <ThemedText type="caption" style={styles.swipeText}>
-                    {restoring ? 'Restore' : 'Trash'}
-                  </ThemedText>
-                </Pressable>
-              )}>
-              <TransactionRow
-                expense={item.expense}
-                position={item}
-                onPress={() => onSelect(item.expense.id)}
-              />
-            </ReanimatedSwipeable>
+            style={[styles.cell, { backgroundColor: theme.card }, neu(theme, 'raisedSm')]}>
+            <View style={styles.clip}>
+              <ReanimatedSwipeable
+                overshootRight={false}
+                renderRightActions={() => (
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={`${restoring ? 'Restore' : 'Delete'} ${item.expense.description}`}
+                    onPress={() => onDelete(item.expense.id)}
+                    style={[
+                      styles.swipeAction,
+                      { backgroundColor: restoring ? theme.success : theme.danger },
+                    ]}>
+                    <Icon name={restoring ? 'restore' : 'trash'} size={20} color="#FFFFFF" />
+                    <ThemedText type="caption" style={styles.swipeText}>
+                      {restoring ? 'Restore' : 'Trash'}
+                    </ThemedText>
+                  </Pressable>
+                )}>
+                <TransactionRow expense={item.expense} onPress={() => onSelect(item.expense.id)} />
+              </ReanimatedSwipeable>
+            </View>
           </Animated.View>
         );
       }}
@@ -228,6 +214,7 @@ export function ExpenseList({
 const styles = StyleSheet.create({
   listContent: {
     flexGrow: 1,
+    paddingHorizontal: ScreenPadding,
   },
   dayHeading: {
     fontWeight: 600,
@@ -236,16 +223,16 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.two,
     paddingHorizontal: Spacing.one,
   },
-  cell: { overflow: 'hidden' },
-  first: { borderTopLeftRadius: Radius.lg, borderTopRightRadius: Radius.lg },
-  last: { borderBottomLeftRadius: Radius.lg, borderBottomRightRadius: Radius.lg },
+  cell: { borderRadius: Radius.lg, marginBottom: Spacing.three },
+  clip: { borderRadius: Radius.lg, overflow: 'hidden' },
+  rounded: { borderRadius: Radius.lg },
   row: {
-    minHeight: 64,
+    minHeight: 68,
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.three,
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.two,
+    paddingHorizontal: Spacing.three + Spacing.one,
+    paddingVertical: Spacing.two + Spacing.one,
   },
   description: {
     flex: 1,

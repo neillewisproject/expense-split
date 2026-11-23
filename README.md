@@ -16,7 +16,13 @@ The app has five tabs:
 - **Insights**: top categories this month, plus the spending breakdown, reports, budgets and savings goals.
 - **More**: sign in or out, accounts, recurring schedules, categories and rules, privacy, import/export and cloud backup.
 
-Screens are built from a small design system: colour, spacing and radius tokens in [`src/constants/theme.ts`](./src/constants/theme.ts), and reusable components in [`src/components/ui`](./src/components/ui). Those components include cards, buttons, chips, list rows, banners, bottom sheets and SF Symbol/Material Symbol icons. Light and dark mode follow the device setting.
+Screens are built from a small neumorphic design system on a warm cream and orange palette.
+
+- Colour, spacing and radius tokens are in [`src/constants/theme.ts`](./src/constants/theme.ts).
+- `neu()` and `inputWell()` in [`src/components/ui/neu.ts`](./src/components/ui/neu.ts) give surfaces raised, pressed-in or glowing depth using paired `boxShadow`s.
+- Reusable components such as cards, buttons, chips, list rows, banners, bottom sheets and icons are in [`src/components/ui`](./src/components/ui).
+
+Selected states are also filled orange, so they never rely on shadow alone. Light and dark mode follow the device setting. Soft shadows use React Native's `boxShadow`. Raised shadows need Android 9+ and pressed-in shadows need Android 10+; older Android versions show flatter surfaces.
 
 | Area                  | Implemented functionality                                                                                                                                                                                                                                                                                                 |
 | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

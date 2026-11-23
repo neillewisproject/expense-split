@@ -8,6 +8,7 @@ import {
   Banner,
   Button,
   ChipGroup,
+  inputWell,
   Screen,
   ScreenHeader,
   type ButtonVariant,
@@ -74,11 +75,8 @@ export function Field({
         style={[
           styles.input,
           multiline && styles.multiline,
-          {
-            color: theme.text,
-            backgroundColor: theme.card,
-            borderColor: focused ? theme.accent : theme.border,
-          },
+          { color: theme.text },
+          inputWell(theme, focused),
         ]}
       />
     </View>
@@ -136,9 +134,8 @@ const styles = StyleSheet.create({
   field: { gap: Spacing.one },
   label: { fontWeight: 600 },
   input: {
-    minHeight: 48,
-    borderWidth: 1,
-    borderRadius: Radius.md,
+    minHeight: 50,
+    borderRadius: Radius.lg,
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two,
     fontSize: 16,

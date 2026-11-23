@@ -17,6 +17,7 @@ import { useTheme } from '@/hooks/use-theme';
 
 import { IconButton } from './button';
 import { Icon } from './icon';
+import { inputWell, neu } from './neu';
 
 /** Bottom sheet built on React Native's Modal; tapping the backdrop closes it. */
 export function Sheet({
@@ -48,7 +49,9 @@ export function Sheet({
         <SafeAreaView
           edges={['bottom']}
           style={[styles.sheet, { backgroundColor: theme.background }]}>
-          <View style={[styles.handle, { backgroundColor: theme.backgroundSelected }]} />
+          <View
+            style={[styles.handle, { backgroundColor: theme.background }, neu(theme, 'insetSm')]}
+          />
           <View style={styles.titleRow}>
             <ThemedText type="heading" accessibilityRole="header" style={styles.title}>
               {title}
@@ -81,7 +84,7 @@ export function SearchBar({
 }) {
   const theme = useTheme();
   return (
-    <View style={[styles.search, { backgroundColor: theme.card, borderColor: theme.border }]}>
+    <View style={[styles.search, inputWell(theme)]}>
       <Icon name="search" size={18} color={theme.textSecondary} />
       <TextInput
         accessibilityLabel={accessibilityLabel ?? placeholder}
@@ -107,7 +110,7 @@ export function SearchBar({
 
 const styles = StyleSheet.create({
   overlay: { flex: 1, justifyContent: 'flex-end' },
-  backdrop: { flex: 1, backgroundColor: 'rgba(16, 24, 40, 0.45)' },
+  backdrop: { flex: 1, backgroundColor: 'rgba(43, 22, 0, 0.35)' },
   sheet: {
     width: '100%',
     maxWidth: MaxContentWidth,
@@ -119,9 +122,9 @@ const styles = StyleSheet.create({
   },
   handle: {
     alignSelf: 'center',
-    width: 40,
-    height: 4,
-    borderRadius: 2,
+    width: 48,
+    height: 6,
+    borderRadius: 3,
     marginTop: Spacing.two,
   },
   titleRow: {
@@ -130,15 +133,14 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.two,
   },
   title: { flex: 1 },
-  content: { gap: Spacing.three, paddingBottom: Spacing.three },
+  content: { gap: Spacing.three, padding: Spacing.one, paddingBottom: Spacing.three },
   footer: { paddingVertical: Spacing.two, gap: Spacing.two },
   search: {
-    minHeight: 46,
+    minHeight: 48,
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.two,
-    borderRadius: Radius.md,
-    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: Radius.lg,
     paddingHorizontal: Spacing.three,
     flex: 1,
   },

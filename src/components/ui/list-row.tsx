@@ -6,17 +6,19 @@ import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 import { Icon, type IconName } from './icon';
+import { neu } from './neu';
 
+/** Icon sitting in a carved-in neumorphic well. */
 export function IconBadge({
   icon,
   color,
-  background,
   size = 40,
+  raised = false,
 }: {
   icon: IconName;
   color?: string;
-  background?: string;
   size?: number;
+  raised?: boolean;
 }) {
   const theme = useTheme();
   return (
@@ -26,11 +28,12 @@ export function IconBadge({
         {
           width: size,
           height: size,
-          borderRadius: size / 2.6,
-          backgroundColor: background ?? theme.accentSoft,
+          borderRadius: size * 0.36,
+          backgroundColor: theme.card,
         },
+        neu(theme, raised ? 'raisedSm' : 'insetSm'),
       ]}>
-      <Icon name={icon} size={size * 0.5} color={color ?? theme.accent} />
+      <Icon name={icon} size={size * 0.48} color={color ?? theme.accent} />
     </View>
   );
 }
@@ -41,7 +44,6 @@ export function ListRow({
   subtitle,
   icon,
   iconColor,
-  iconBackground,
   leading,
   trailing,
   onPress,
@@ -53,7 +55,6 @@ export function ListRow({
   subtitle?: string;
   icon?: IconName;
   iconColor?: string;
-  iconBackground?: string;
   leading?: ReactNode;
   trailing?: ReactNode;
   onPress?: () => void;
@@ -64,8 +65,7 @@ export function ListRow({
   const theme = useTheme();
   const content = (
     <>
-      {leading ??
-        (icon ? <IconBadge icon={icon} color={iconColor} background={iconBackground} /> : null)}
+      {leading ?? (icon ? <IconBadge icon={icon} color={iconColor} /> : null)}
       <View style={styles.text}>
         <ThemedText
           type="smallBold"
@@ -105,7 +105,7 @@ export function ListRow({
   );
 }
 
-export function Divider({ inset = 68 }: { inset?: number }) {
+export function Divider({ inset = 72 }: { inset?: number }) {
   const theme = useTheme();
   return <View style={[styles.divider, { marginLeft: inset, backgroundColor: theme.border }]} />;
 }
@@ -113,15 +113,15 @@ export function Divider({ inset = 68 }: { inset?: number }) {
 const styles = StyleSheet.create({
   badge: { alignItems: 'center', justifyContent: 'center' },
   row: {
-    minHeight: 64,
+    minHeight: 68,
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.three,
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.two,
+    paddingHorizontal: Spacing.three + Spacing.one,
+    paddingVertical: Spacing.two + Spacing.one,
     borderRadius: Radius.md,
   },
   text: { flex: 1, minWidth: 0, gap: 2 },
   trailing: { flexShrink: 0, textAlign: 'right' },
-  divider: { height: StyleSheet.hairlineWidth },
+  divider: { height: StyleSheet.hairlineWidth, marginRight: Spacing.three },
 });

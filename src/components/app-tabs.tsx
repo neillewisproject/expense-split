@@ -16,13 +16,13 @@ export default function AppTabs() {
 
   return (
     <NativeTabs
-      backgroundColor={theme.card}
+      backgroundColor={theme.background}
       indicatorColor={theme.accentSoft}
       tintColor={theme.accent}
       iconColor={{ default: theme.textSecondary, selected: theme.accent }}
       labelStyle={{
         default: { color: theme.textSecondary },
-        selected: { color: theme.accent, fontWeight: '600' },
+        selected: { color: theme.accent, fontWeight: '700' },
       }}>
       {TABS.map((tab) => (
         <NativeTabs.Trigger key={tab.name} name={tab.name}>
