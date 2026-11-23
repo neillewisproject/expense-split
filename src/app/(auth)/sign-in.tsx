@@ -1,62 +1,46 @@
+import * as AppleAuthentication from 'expo-apple-authentication';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
-import { Banner, Button, Card, IconBadge, inputWell } from '@/components/ui';
+import { Banner, Button, Card, IconBadge, neu } from '@/components/ui';
 import { Radius, Spacing } from '@/constants/theme';
-import { Field } from '@/features/expenses/components/personal-ui';
 import { useAuth } from '@/features/auth/auth-provider';
+import type { SocialProvider } from '@/features/auth/social-sign-in';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useTheme } from '@/hooks/use-theme';
+
+const PROVIDER_NAMES: Record<SocialProvider, string> = { google: 'Google', apple: 'Apple' };
 
 export default function SignInScreen() {
   const theme = useTheme();
+  const colorScheme = useColorScheme();
   const { inviteCode } = useLocalSearchParams<{ inviteCode?: string }>();
-  const {
-    isConfigured,
-    error: authError,
-    continueAsGuest,
-    sendSignInLink,
-    verifyEmailCode,
-  } = useAuth();
-  const [email, setEmail] = useState('');
-  const [code, setCode] = useState('');
-  const [codeSent, setCodeSent] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
+  const { isConfigured, error: authError, continueAsGuest, signInWithProvider } = useAuth();
+  const [pending, setPending] = useState<SocialProvider | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [isSending, setIsSending] = useState(false);
-  const [isVerifying, setIsVerifying] = useState(false);
+  const disabled = !isConfigured || pending !== null;
 
-  async function handleSendLink() {
+  async function handleSignIn(provider: SocialProvider) {
+    // The native Apple button has no disabled state, so guard here as well.
+    if (disabled) return;
     setError(null);
-    setMessage(null);
-    setIsSending(true);
+    setPending(provider);
     try {
-      await sendSignInLink(email, inviteCode);
-      setCodeSent(true);
-      setMessage('Check your email. Enter the 6-digit code below, or open the link on this phone.');
-    } catch (sendError) {
-      setError(sendError instanceof Error ? sendError.message : 'Could not send the sign-in link.');
-    } finally {
-      setIsSending(false);
-    }
-  }
-
-  async function handleVerifyCode() {
-    setError(null);
-    setIsVerifying(true);
-    try {
-      await verifyEmailCode(email, code);
-      if (inviteCode) {
+      const signedIn = await signInWithProvider(provider, inviteCode);
+      if (signedIn && inviteCode) {
         router.replace({ pathname: '/join/[code]', params: { code: inviteCode } });
       }
-    } catch (verifyError) {
+    } catch (signInError) {
       setError(
-        verifyError instanceof Error ? verifyError.message : 'That code is invalid or expired.',
+        signInError instanceof Error
+          ? signInError.message
+          : `Could not sign in with ${PROVIDER_NAMES[provider]}.`,
       );
     } finally {
-      setIsVerifying(false);
+      setPending(null);
     }
   }
 
@@ -65,7 +49,47 @@ export default function SignInScreen() {
     router.replace('/');
   }
 
-  const sendDisabled = !isConfigured || isSending || !email.trim();
+  const googleButton = (
+    <Button
+      key="google"
+      label="Continue with Google"
+      loading={pending === 'google'}
+      disabled={disabled}
+      onPress={() => void handleSignIn('google')}
+    />
+  );
+  const appleButton =
+    Platform.OS === 'ios' ? (
+      <View
+        key="apple"
+        style={[
+          styles.appleShadow,
+          { backgroundColor: theme.card },
+          neu(theme, disabled ? 'flat' : 'raisedSm'),
+          disabled && styles.disabled,
+        ]}>
+        <AppleAuthentication.AppleAuthenticationButton
+          buttonType={AppleAuthentication.AppleAuthenticationButtonType.CONTINUE}
+          buttonStyle={
+            colorScheme === 'dark'
+              ? AppleAuthentication.AppleAuthenticationButtonStyle.WHITE
+              : AppleAuthentication.AppleAuthenticationButtonStyle.BLACK
+          }
+          cornerRadius={Radius.lg}
+          style={styles.appleButton}
+          onPress={() => void handleSignIn('apple')}
+        />
+      </View>
+    ) : (
+      <Button
+        key="apple"
+        variant="secondary"
+        label="Continue with Apple"
+        loading={pending === 'apple'}
+        disabled={disabled}
+        onPress={() => void handleSignIn('apple')}
+      />
+    );
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
@@ -96,53 +120,13 @@ export default function SignInScreen() {
           {authError ? <Banner tone="danger" message={authError} /> : null}
 
           <Card>
-            <ThemedText type="heading">Sign in with email</ThemedText>
+            <ThemedText type="heading">Sign in</ThemedText>
             <ThemedText type="small" themeColor="textSecondary">
-              We’ll email you a one-time code. No password required.
+              Use your Google or Apple account to share groups and back up to the cloud. No password
+              required.
             </ThemedText>
-            <Field
-              label="Email address"
-              value={email}
-              onChange={setEmail}
-              placeholder="you@example.com"
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoComplete="email"
-            />
-            <Button
-              variant={codeSent ? 'secondary' : 'primary'}
-              icon="signIn"
-              label={isSending ? 'Sending…' : codeSent ? 'Send a new code' : 'Send sign-in code'}
-              disabled={sendDisabled}
-              onPress={() => void handleSendLink()}
-            />
-            {codeSent ? (
-              <>
-                <View style={styles.field}>
-                  <ThemedText type="caption" themeColor="textSecondary" style={styles.label}>
-                    Code from email
-                  </ThemedText>
-                  <TextInput
-                    accessibilityLabel="Code from email"
-                    autoComplete="one-time-code"
-                    keyboardType="number-pad"
-                    maxLength={10}
-                    onChangeText={setCode}
-                    placeholder="123456"
-                    placeholderTextColor={theme.textSecondary}
-                    style={[styles.code, { color: theme.text }, inputWell(theme)]}
-                    textContentType="oneTimeCode"
-                    value={code}
-                  />
-                </View>
-                <Button
-                  label={isVerifying ? 'Verifying…' : 'Sign in'}
-                  disabled={isVerifying || code.trim().length < 6}
-                  onPress={() => void handleVerifyCode()}
-                />
-              </>
-            ) : null}
-            {message ? <Banner tone="success" message={message} /> : null}
+            {/* Apple's guidelines expect its button first on Apple devices. */}
+            {Platform.OS === 'ios' ? [appleButton, googleButton] : [googleButton, appleButton]}
             {error ? <Banner tone="danger" message={error} /> : null}
           </Card>
 
@@ -187,17 +171,9 @@ const styles = StyleSheet.create({
   },
   brand: { alignItems: 'center', gap: Spacing.two, marginBottom: Spacing.two },
   center: { textAlign: 'center' },
-  field: { gap: Spacing.one },
-  label: { fontWeight: 600 },
-  code: {
-    minHeight: 56,
-    borderRadius: Radius.lg,
-    paddingHorizontal: Spacing.three,
-    fontSize: 24,
-    fontWeight: 700,
-    letterSpacing: 6,
-    textAlign: 'center',
-  },
+  appleShadow: { borderRadius: Radius.lg },
+  appleButton: { height: 50 },
+  disabled: { opacity: 0.5, pointerEvents: 'none' },
   divider: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
   line: { flex: 1, height: StyleSheet.hairlineWidth },
 });

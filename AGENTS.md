@@ -53,14 +53,14 @@ Run only targeted checks (typecheck and the touched test files) while developing
 - SQLite schema changes require `npm run db:generate` and review of SQL, the migration journal, and bundled migration imports. Do not rewrite previously applied migrations.
 - Supabase schema changes use new migrations in `supabase/migrations/` and matching TypeScript database contracts. Preserve RLS and RPC authorization.
 - Use existing theme tokens and native primitives. Preserve safe areas, keyboard behavior, dark mode, screen-reader labels, and large-text layouts.
-- Surface actionable errors in the UI and log relevant diagnostic context without tokens, email codes, personal expense data, or credentials. Do not hide failures behind success-shaped defaults.
+- Surface actionable errors in the UI and log relevant diagnostic context without tokens, auth codes, personal expense data, or credentials. Do not hide failures behind success-shaped defaults.
 - Follow existing tests. React Native Testing Library rendering is asynchronous in this project; await `render`. Mock native boundaries, clean up listeners/query clients, and never mask hanging tests with `--forceExit`.
 
 ## Working safely and teaching
 
 - Read related implementation and tests before editing. Make focused changes, preserve unrelated work, and update directly related documentation.
 - Explain the key concept and why the chosen approach fits the stack, briefly. Do not turn each task into a large tutorial unless requested.
-- Do not read or print `.env` values to diagnose configuration. Report presence/format checks only. Never request passwords, service-role keys, auth tokens, or email codes in chat.
+- Do not read or print `.env` values to diagnose configuration. Report presence/format checks only. Never request passwords, service-role keys, auth tokens, or OAuth codes in chat.
 - `EXPO_PUBLIC_*` values are shipped to clients. Only client-safe Supabase project URLs and publishable keys belong there; privileged credentials never belong in the app.
 - Do not delete app data, reset a database, run remote migrations, change cloud settings, send auth emails, deploy, install plugins, commit, or push without an explicit request covering that action.
 - Diagnose from the actual error and stack trace. Mark unavailable device, email, RLS, and multi-user checks as unverified rather than claiming success.
@@ -75,7 +75,7 @@ Path-specific instructions:
 - `ui-design-system.instructions.md`: neumorphic tokens, depth, shadow clipping, components, tab bar.
 - `mobile.instructions.md`: routing, state selectors, effects, guest navigation.
 - `native-runtime.instructions.md`: Hermes vs Node differences, Expo Go limits, web, deep links.
-- `auth.instructions.md`: email OTP, PKCE link handling, SecureStore, dashboard setup.
+- `auth.instructions.md`: Google/Apple sign-in, PKCE redirect handling, SecureStore, dashboard setup.
 - `data.instructions.md` and `schema-and-backups.instructions.md`: domain, sync, migrations, backup versioning.
 - `tests.instructions.md`: Jest/RNTL conventions and project-specific mocking gotchas.
 

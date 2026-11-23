@@ -21,19 +21,20 @@ From the project root, the user can run:
 npx expo start -c 2>&1 | Tee-Object -FilePath metro.log
 ```
 
-Do not start a second Metro server blindly. Piped output can affect QR rendering and shortcuts; React Native DevTools Console is an alternative. Logs can contain sensitive data: inspect only relevant lines and redact credentials, email codes, and personal records before sharing.
+Do not start a second Metro server blindly. Piped output can affect QR rendering and shortcuts; React Native DevTools Console is an alternative. Logs can contain sensitive data: inspect only relevant lines and redact credentials, auth codes and tokens, and personal records before sharing.
 
 ## Known symptoms in this project
 
-| Symptom                                                                          | Cause found before                                                                 | Where to look                                             |
-| -------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- | --------------------------------------------------------- |
-| `TypeError: Cannot convert BigInt to number` in a list                           | `Intl.NumberFormat` given a `BigInt` (Hermes only)                                 | `features/expenses/domain/money.ts`                       |
-| "Expense Split is locked" + "Invalid key provided to SecureStore"                | SecureStore key with `:`                                                           | `features/privacy/app-lock.tsx`                           |
-| Black screen with the tab bar at the top                                         | `expo-router/ui` `Tabs` given `style` without `flex: 1`                            | `components/app-tabs.tsx`                                 |
-| Email link opens the app but returns to sign-in                                  | PKCE code landed on a route other than `/auth/callback`, or an expired/reused link | `features/auth/sign-in-link.ts`, Supabase redirect URLs   |
-| "email rate limit exceeded"                                                      | Supabase built-in email limits                                                     | Custom SMTP (user dashboard action)                       |
-| "Supabase not configured"                                                        | Missing/invalid `EXPO_PUBLIC_*` values or Metro not restarted after editing `.env` | `lib/supabase.ts` (check presence/format only)            |
-| `GestureDetector must be used as a descendant of GestureHandlerRootView`         | Root wrapper missing or moved                                                      | `src/app/_layout.tsx`                                     |
-| Glow/shadow cut off in a straight line                                           | Clipped by a ScrollView edge, tab-screen bottom, or `overflow: hidden` parent      | `ui-design-system.instructions.md`                        |
-| Red delete action flashes after swipe-delete                                     | Row layout/exit animations with the swipe still open                               | `features/expenses/components/expense-list.tsx`           |
-| Web: `Unable to resolve ./wa-sqlite/wa-sqlite.wasm`, SSR `window is not defined` | Web is unsupported (SQLite wasm, native-only modules)                              | Ignore for phone issues; do not use web to verify screens |
+| Symptom                                                                          | Cause found before                                                                               | Where to look                                             |
+| -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ | --------------------------------------------------------- |
+| `TypeError: Cannot convert BigInt to number` in a list                           | `Intl.NumberFormat` given a `BigInt` (Hermes only)                                               | `features/expenses/domain/money.ts`                       |
+| "Expense Split is locked" + "Invalid key provided to SecureStore"                | SecureStore key with `:`                                                                         | `features/privacy/app-lock.tsx`                           |
+| Black screen with the tab bar at the top                                         | `expo-router/ui` `Tabs` given `style` without `flex: 1`                                          | `components/app-tabs.tsx`                                 |
+| OAuth browser closes but the app stays on sign-in                                | Redirect URL not allow-listed (code lands on the Site URL route), or an expired/reused PKCE code | `features/auth/sign-in-link.ts`, Supabase redirect URLs   |
+| "Unsupported provider: provider is not enabled"                                  | Google/Apple provider not enabled in Supabase Auth                                               | Supabase Auth → Providers (user dashboard action)         |
+| Native Apple sign-in fails with an audience/"Unacceptable audience" error        | Bundle ID (or `host.exp.Exponent` in Expo Go) missing from Apple provider Client IDs             | Supabase Auth → Providers → Apple (user dashboard action) |
+| "Supabase not configured"                                                        | Missing/invalid `EXPO_PUBLIC_*` values or Metro not restarted after editing `.env`               | `lib/supabase.ts` (check presence/format only)            |
+| `GestureDetector must be used as a descendant of GestureHandlerRootView`         | Root wrapper missing or moved                                                                    | `src/app/_layout.tsx`                                     |
+| Glow/shadow cut off in a straight line                                           | Clipped by a ScrollView edge, tab-screen bottom, or `overflow: hidden` parent                    | `ui-design-system.instructions.md`                        |
+| Red delete action flashes after swipe-delete                                     | Row layout/exit animations with the swipe still open                                             | `features/expenses/components/expense-list.tsx`           |
+| Web: `Unable to resolve ./wa-sqlite/wa-sqlite.wasm`, SSR `window is not defined` | Web is unsupported (SQLite wasm, native-only modules)                                            | Ignore for phone issues; do not use web to verify screens |

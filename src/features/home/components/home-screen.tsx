@@ -19,6 +19,7 @@ import {
 import { HeroGradient, Radius, Spacing } from '@/constants/theme';
 import { usePersonalStore } from '@/features/accounts/store';
 import { useAuth } from '@/features/auth/auth-provider';
+import { firstName } from '@/features/auth/display-name';
 import { TransactionRow } from '@/features/expenses/components/expense-list';
 import { message } from '@/features/expenses/components/personal-ui';
 import { localDate } from '@/features/expenses/domain/expense';
@@ -77,7 +78,7 @@ export function HomeScreen() {
 
   const recent = useMemo(() => filterEntries(entries, {}).slice(0, 5), [entries]);
   const pending = drafts.filter((draft) => draft.status === 'pending').length;
-  const name = user?.email?.split('@')[0];
+  const name = firstName(user);
   const monthName = new Date().toLocaleDateString('en-IN', { month: 'long' });
 
   return (

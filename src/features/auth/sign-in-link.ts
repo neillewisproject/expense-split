@@ -19,7 +19,7 @@ function readParams(part: string | undefined, into: Map<string, string>) {
 
 /**
  * Supabase falls back to the project's Site URL when the requested redirect is not allow-listed,
- * so a sign-in link can open any app route. Read its PKCE code or error wherever it lands.
+ * so an OAuth redirect can open any app route. Read its PKCE code or error wherever it lands.
  */
 export function readSignInLink(url: string | null | undefined): SignInLink | null {
   if (!url) return null;
@@ -41,7 +41,7 @@ export function readSignInLink(url: string | null | undefined): SignInLink | nul
 
 const exchanges = new Map<string, Promise<void>>();
 
-/** Exchanges each PKCE code once, even if both the deep-link listener and callback route see it. */
+/** Exchanges each PKCE code once, even if the browser result, deep-link listener and callback route all see it. */
 export function completeSignInLink(code: string): Promise<void> {
   let exchange = exchanges.get(code);
   if (!exchange) {

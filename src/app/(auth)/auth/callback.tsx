@@ -38,7 +38,7 @@ export default function AuthCallbackScreen() {
       : callbackError
         ? callbackError
         : !code
-          ? 'The sign-in link is missing its one-time code. Request a new link and try again.'
+          ? 'The sign-in response is missing its one-time code. Return to sign in and try again.'
           : null);
 
   useEffect(() => {
@@ -59,7 +59,7 @@ export default function AuthCallbackScreen() {
         setError(
           exchangeError instanceof Error
             ? exchangeError.message
-            : 'Could not verify the sign-in link. Request a new link and try again.',
+            : 'Could not complete sign-in. Return to sign in and try again.',
         );
       });
   }, [callbackError, code, inviteCode, isConfigured]);
@@ -69,7 +69,7 @@ export default function AuthCallbackScreen() {
       <SafeAreaView style={styles.safeArea}>
         {displayError ? (
           <>
-            <ThemedText type="subtitle">Sign-in link failed</ThemedText>
+            <ThemedText type="subtitle">Sign-in failed</ThemedText>
             <ThemedText accessibilityRole="alert" themeColor="danger">
               {displayError}
             </ThemedText>
@@ -78,7 +78,7 @@ export default function AuthCallbackScreen() {
             </Pressable>
           </>
         ) : (
-          <ThemedText type="subtitle">Verifying sign-in link…</ThemedText>
+          <ThemedText type="subtitle">Finishing sign-in…</ThemedText>
         )}
       </SafeAreaView>
     </ThemedView>

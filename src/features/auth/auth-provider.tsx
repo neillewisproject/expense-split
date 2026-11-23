@@ -6,6 +6,7 @@ import { AppState, Platform } from 'react-native';
 import { getSupabaseClient, isSupabaseConfigured } from '@/lib/supabase';
 
 import { completeSignInLink, readSignInLink } from './sign-in-link';
+import { signInWithProvider, type SocialProvider } from './social-sign-in';
 
 type AuthContextValue = {
   session: Session | null;
@@ -15,8 +16,7 @@ type AuthContextValue = {
   isConfigured: boolean;
   error: string | null;
   continueAsGuest: () => void;
-  sendSignInLink: (email: string, inviteCode?: string) => Promise<void>;
-  verifyEmailCode: (email: string, code: string) => Promise<void>;
+  signInWithProvider: (provider: SocialProvider, inviteCode?: string) => Promise<boolean>;
   signOut: () => Promise<void>;
 };
 
@@ -104,26 +104,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, [isConfigured]);
 
-  const sendSignInLink = useCallback(async (email: string, inviteCode?: string) => {
-    const redirectTo = Linking.createURL('auth/callback', {
-      queryParams: inviteCode ? { inviteCode } : undefined,
-    });
-    const { error: signInError } = await getSupabaseClient().auth.signInWithOtp({
-      email: email.trim(),
-      options: { emailRedirectTo: redirectTo },
-    });
-    if (signInError) throw signInError;
-  }, []);
-
-  const verifyEmailCode = useCallback(async (email: string, code: string) => {
-    const { error: verifyError } = await getSupabaseClient().auth.verifyOtp({
-      email: email.trim(),
-      token: code.trim(),
-      type: 'email',
-    });
-    if (verifyError) throw verifyError;
-  }, []);
-
   const signOut = useCallback(async () => {
     const { error: signOutError } = await getSupabaseClient().auth.signOut();
     if (signOutError) throw signOutError;
@@ -140,21 +120,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isConfigured,
       error,
       continueAsGuest,
-      sendSignInLink,
-      verifyEmailCode,
+      signInWithProvider,
       signOut,
     }),
-    [
-      continueAsGuest,
-      error,
-      isConfigured,
-      isGuest,
-      isLoading,
-      sendSignInLink,
-      session,
-      signOut,
-      verifyEmailCode,
-    ],
+    [continueAsGuest, error, isConfigured, isGuest, isLoading, session, signOut],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

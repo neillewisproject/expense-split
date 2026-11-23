@@ -109,10 +109,12 @@ Official references: [Copilot instructions](https://docs.github.com/en/copilot/h
 
 1. Create a Supabase project and apply every SQL file in [supabase/migrations/](./supabase/migrations/) in filename order using its SQL Editor or the Supabase CLI. See the upgrade section below for ordering and older-client compatibility.
 2. Copy `.env.example` to `.env` and set `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` from the Supabase project’s Connect dialog. These are client-side values; never put a service-role key in the app.
-3. In Supabase Auth, enable email sign-in and add `expensesplit://**` and `exp://**` to the allowed redirect URLs. Under **Authentication → Emails → Magic Link**, add `{{ .Token }}` to the template so the email includes the 6-digit code the app asks for.
-4. Restart Expo after changing `.env`. Sign in with the emailed code (or link), then create a new group to share it. Groups already on the device remain local-only.
+3. In Supabase **Authentication → URL Configuration**, add `expensesplit://**` and `exp://**` to the allowed redirect URLs. Then enable the providers under **Authentication → Providers**:
+   - **Google:** in Google Cloud Console, create an OAuth client of type _Web application_. Add the callback URL shown on Supabase's Google provider page (`https://<project-ref>.supabase.co/auth/v1/callback`) as an authorized redirect URI, then paste the client ID and secret into Supabase.
+   - **Apple** (needs an Apple Developer account): iOS uses native Sign in with Apple, so add the iOS bundle ID to the Apple provider's **Client IDs**, plus `host.exp.Exponent` while testing in Expo Go. Android signs in through the browser and also needs a Services ID whose return URL is the same Supabase callback, and a secret generated from your Sign in with Apple key. Apple requires regenerating that secret every 6 months.
+4. Restart Expo after changing `.env`. Choose **Continue with Google** or **Continue with Apple**, then create a new group to share it. Groups already on the device remain local-only.
 
-Shared group changes are saved in SQLite first and queued for retry when connectivity returns. Authenticated group members can use invite links; Realtime refreshes the local cache when other members add or change shared group data. Google and Apple sign-in are not configured in this email-first milestone.
+Shared group changes are saved in SQLite first and queued for retry when connectivity returns. Authenticated group members can use invite links; Realtime refreshes the local cache when other members add or change shared group data. Sign-in uses Google or Apple accounts only; email codes and magic links are no longer supported. A standalone iOS build also needs `ios.bundleIdentifier` in `app.json` (the Sign in with Apple capability is already enabled there).
 
 ### Upgrade an existing Supabase project
 
