@@ -133,6 +133,7 @@ export const useGroupsStore = create<GroupsState>((set, get) => ({
         activeUserId: userId ?? null,
       });
     } catch (error) {
+      console.error('Could not load groups', error);
       set({ status: 'error', error: `Could not load groups: ${getErrorMessage(error)}` });
     }
   },
@@ -179,6 +180,7 @@ export const useGroupsStore = create<GroupsState>((set, get) => ({
       return id;
     } catch (error) {
       const message = `Could not create group: ${getErrorMessage(error)}`;
+      console.error(message, error);
       set({ error: message });
       throw new Error(message, { cause: error });
     }
@@ -244,6 +246,7 @@ export const useGroupsStore = create<GroupsState>((set, get) => ({
       });
     } catch (error) {
       const message = `Could not save group expense: ${getErrorMessage(error)}`;
+      console.error(message, error);
       set({ error: message });
       throw new Error(message, { cause: error });
     }

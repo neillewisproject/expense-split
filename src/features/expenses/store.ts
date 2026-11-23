@@ -39,6 +39,7 @@ export const useExpensesStore = create<ExpensesState>((set) => ({
         .orderBy(desc(expenses.date), desc(expenses.createdAt));
       set({ expenses: rows, status: 'ready', error: null });
     } catch (error) {
+      console.error('Could not load expenses', error);
       set({ status: 'error', error: `Could not load expenses: ${errorMessage(error)}` });
     }
   },
@@ -67,6 +68,7 @@ export const useExpensesStore = create<ExpensesState>((set) => ({
       set({ expenses: rows, status: 'ready', error: null });
     } catch (error) {
       const message = `Could not save expense: ${errorMessage(error)}`;
+      console.error(message, error);
       set({ error: message });
       throw new Error(message, { cause: error });
     }
@@ -94,6 +96,7 @@ export const useExpensesStore = create<ExpensesState>((set) => ({
       }
     } catch (error) {
       const message = `Could not delete expense: ${errorMessage(error)}`;
+      console.error(message, error);
       set({ error: message });
       throw new Error(message, { cause: error });
     }

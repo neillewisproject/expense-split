@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as Network from 'expo-network';
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 
 import { useAuth } from '@/features/auth/auth-provider';
 import {
@@ -17,10 +17,13 @@ export function GroupCloudSync() {
   const { user, isConfigured } = useAuth();
   const queryClient = useQueryClient();
   const network = Network.useNetworkState();
-  const pendingIds = useGroupsStore((state) =>
-    state.groups
-      .filter((group) => group.syncStatus === 'pending' && group.syncUserId === user?.id)
-      .map((group) => group.id),
+  const groups = useGroupsStore((state) => state.groups);
+  const pendingIds = useMemo(
+    () =>
+      groups
+        .filter((group) => group.syncStatus === 'pending' && group.syncUserId === user?.id)
+        .map((group) => group.id),
+    [groups, user?.id],
   );
   const pendingKey = pendingIds.join('|');
   const retryVersion = useGroupsStore((state) => state.syncRetry);
