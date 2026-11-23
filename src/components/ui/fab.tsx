@@ -59,7 +59,8 @@ export function Avatar({ name, size = 40 }: { name: string; size?: number }) {
 }
 
 const styles = StyleSheet.create({
-  fab: { position: 'absolute', right: ScreenPadding, bottom: Spacing.three },
+  // Tab screens clip at the tab bar, so keep the button's glow (~16px) inside the screen.
+  fab: { position: 'absolute', right: ScreenPadding, bottom: ScreenPadding },
   button: { paddingHorizontal: Spacing.four + Spacing.one },
   avatar: { alignItems: 'center', justifyContent: 'center', borderWidth: 2 },
 });

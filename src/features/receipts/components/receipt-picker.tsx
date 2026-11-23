@@ -1,10 +1,13 @@
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { useState } from 'react';
-import { Pressable, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
+import { Banner, Button, Icon, neu } from '@/components/ui';
+import { Radius, Spacing } from '@/constants/theme';
 import { persistReceiptFile } from '@/features/expenses/data/receipt-files';
+import { useTheme } from '@/hooks/use-theme';
 
 type Props = {
   uris: string[];
@@ -13,6 +16,7 @@ type Props = {
 };
 
 export function ReceiptPicker({ uris, onChange, persistFiles = true }: Props) {
+  const theme = useTheme();
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -49,35 +53,77 @@ export function ReceiptPicker({ uris, onChange, persistFiles = true }: Props) {
   }
 
   return (
-    <View style={{ gap: 12 }}>
-      <ThemedText type="smallBold">Receipt photos (stored on this device)</ThemedText>
-      {uris.map((uri, index) => (
-        <View key={uri} style={{ gap: 8 }}>
-          <Image
-            source={{ uri }}
-            contentFit="contain"
-            style={{ height: 160 }}
-            accessibilityLabel={`Receipt ${index + 1}`}
-          />
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={`Remove receipt ${index + 1}`}
-            onPress={() => onChange(uris.filter((item) => item !== uri))}>
-            <ThemedText type="linkPrimary">Remove receipt {index + 1}</ThemedText>
-          </Pressable>
+    <View style={styles.root}>
+      <ThemedText type="caption" themeColor="textSecondary" style={styles.label}>
+        Receipt photos (stored on this device)
+      </ThemedText>
+      {uris.length ? (
+        <View style={styles.thumbs}>
+          {uris.map((uri, index) => (
+            <View
+              key={uri}
+              style={[styles.thumb, { backgroundColor: theme.card }, neu(theme, 'raisedSm')]}>
+              <Image
+                source={{ uri }}
+                contentFit="cover"
+                style={styles.image}
+                accessibilityLabel={`Receipt ${index + 1}`}
+              />
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`Remove receipt ${index + 1}`}
+                hitSlop={8}
+                onPress={() => onChange(uris.filter((item) => item !== uri))}
+                style={[styles.remove, { backgroundColor: theme.danger }]}>
+                <Icon name="close" size={14} color="#FFFFFF" />
+              </Pressable>
+            </View>
+          ))}
         </View>
-      ))}
-      <Pressable accessibilityRole="button" disabled={busy} onPress={() => void pick(true)}>
-        <ThemedText type="linkPrimary">{busy ? 'Attaching…' : 'Photograph receipt'}</ThemedText>
-      </Pressable>
-      <Pressable accessibilityRole="button" disabled={busy} onPress={() => void pick(false)}>
-        <ThemedText type="linkPrimary">Choose receipt photos</ThemedText>
-      </Pressable>
-      <ThemedText type="small" themeColor="textSecondary">
+      ) : null}
+      <View style={styles.actions}>
+        <Button
+          variant="secondary"
+          icon="camera"
+          label={busy ? 'Attaching…' : 'Photograph receipt'}
+          disabled={busy}
+          onPress={() => void pick(true)}
+          style={styles.action}
+        />
+        <Button
+          variant="secondary"
+          icon="photos"
+          label="Choose receipt photos"
+          disabled={busy}
+          onPress={() => void pick(false)}
+          style={styles.action}
+        />
+      </View>
+      <ThemedText type="caption" themeColor="textSecondary">
         Photos are not uploaded automatically. OCR requires a separately approved native
         integration.
       </ThemedText>
-      {error ? <ThemedText accessibilityRole="alert">{error}</ThemedText> : null}
+      {error ? <Banner tone="danger" message={error} /> : null}
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  root: { gap: Spacing.three },
+  label: { fontWeight: 600 },
+  thumbs: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.three },
+  thumb: { width: 96, height: 96, borderRadius: Radius.md, padding: 4 },
+  image: { flex: 1, borderRadius: Radius.sm },
+  remove: {
+    position: 'absolute',
+    top: -6,
+    right: -6,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  actions: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.three },
+  action: { flexGrow: 1 },
+});

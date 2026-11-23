@@ -8,6 +8,7 @@ import {
   Field,
   PersonalPage,
   message,
+  ItemCard,
 } from '@/features/expenses/components/personal-ui';
 import { localDate } from '@/features/expenses/domain/expense';
 import { formatMoney } from '@/features/expenses/domain/money';
@@ -91,53 +92,57 @@ export function RecurrenceScreen() {
             currency?: string;
           };
           return (
-            <ThemedText key={draft.id}>
-              {draft.date} · {template.description} ·{' '}
-              {formatMoney(template.amount, template.currency ?? 'INR')}
-              {'\n'}
-              <ThemedText
-                type="linkPrimary"
-                onPress={() => {
-                  if (!busy) void run(() => decide(draft.id, true));
-                }}>
-                Approve
-              </ThemedText>
-              {' · '}
-              <ThemedText
-                type="linkPrimary"
-                onPress={() => {
-                  if (!busy) void run(() => decide(draft.id, false));
-                }}>
-                Skip
-              </ThemedText>
-            </ThemedText>
+            <ItemCard
+              key={draft.id}
+              title={template.description}
+              details={[
+                `${draft.date} · ${formatMoney(template.amount, template.currency ?? 'INR')}`,
+              ]}
+              actions={[
+                {
+                  label: 'Approve',
+                  variant: 'primary',
+                  disabled: busy,
+                  onPress: () => void run(() => decide(draft.id, true)),
+                },
+                {
+                  label: 'Skip',
+                  disabled: busy,
+                  onPress: () => void run(() => decide(draft.id, false)),
+                },
+              ]}
+            />
           );
         })}
       {rules.map((rule) => (
-        <ThemedText key={rule.id}>
-          {rule.name} · every {rule.interval} {rule.frequency} ·{' '}
-          {rule.endDate && rule.nextDate > rule.endDate
-            ? 'schedule ended'
-            : `next ${rule.nextDate}`}
-          {rule.endDate ? ` · ends ${rule.endDate}` : ''}
-          {` · ${rule.timeZone ?? 'device time zone'}`}
-          {'\n'}
-          <ThemedText
-            type="linkPrimary"
-            onPress={() => {
-              if (!busy)
+        <ItemCard
+          key={rule.id}
+          title={rule.name}
+          details={[
+            `Every ${rule.interval} ${rule.frequency} · ${
+              rule.endDate && rule.nextDate > rule.endDate
+                ? 'schedule ended'
+                : `next ${rule.nextDate}`
+            }${rule.endDate ? ` · ends ${rule.endDate}` : ''}`,
+            rule.timeZone ?? 'device time zone',
+            rule.active ? null : 'Paused',
+          ]}
+          actions={[
+            {
+              label: rule.active ? 'Pause' : 'Resume',
+              disabled: busy,
+              onPress: () =>
                 void run(async () => {
                   if (rule.active) await removePersonalReminder(rule.id);
                   await setActive(rule.id, !rule.active);
-                });
-            }}>
-            {rule.active ? 'Pause' : 'Resume'}
-          </ThemedText>
-          {' · '}
-          <ThemedText
-            type="linkPrimary"
-            onPress={() => {
-              if (!busy)
+                }),
+            },
+            {
+              label: reminders[rule.id]
+                ? `Cancel reminder (${new Date(reminders[rule.id]!.date).toLocaleString()})`
+                : 'Schedule one-off reminder',
+              disabled: busy,
+              onPress: () =>
                 void run(async () => {
                   if (reminders[rule.id]) await removePersonalReminder(rule.id);
                   else {
@@ -150,13 +155,10 @@ export function RecurrenceScreen() {
                       throw new Error('Enter a valid calendar date');
                     await addPersonalReminder(rule.id, when);
                   }
-                });
-            }}>
-            {reminders[rule.id]
-              ? `Cancel reminder (${new Date(reminders[rule.id]!.date).toLocaleString()})`
-              : 'Schedule one-off reminder'}
-          </ThemedText>
-        </ThemedText>
+                }),
+            },
+          ]}
+        />
       ))}
       <ThemedText type="smallBold">Create from an existing transaction</ThemedText>
       <Choices

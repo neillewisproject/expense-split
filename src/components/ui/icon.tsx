@@ -46,6 +46,8 @@ const ICONS = {
   sync: { ios: 'arrow.triangle.2.circlepath', android: 'sync' },
   settle: { ios: 'arrow.left.arrow.right.circle.fill', android: 'handshake' },
   share: { ios: 'square.and.arrow.up', android: 'share' },
+  camera: { ios: 'camera.fill', android: 'photo_camera' },
+  photos: { ios: 'photo.on.rectangle', android: 'photo_library' },
   calendar: { ios: 'calendar', android: 'calendar_today' },
   edit: { ios: 'pencil', android: 'edit' },
   copy: { ios: 'doc.on.doc', android: 'content_copy' },

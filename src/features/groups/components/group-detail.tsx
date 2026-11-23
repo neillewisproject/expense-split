@@ -511,21 +511,7 @@ function Details({ group }: { group: GroupWithDetails }) {
                 {formatMoney(expense.refundSnapshot.baseRoundingAdjustment, group.currency)}
               </ThemedText>
             ) : null}
-            {expense.kind === 'expense' &&
-            !expense.deletedAt &&
-            canEditExpense(group, expense, userId) ? (
-              <GroupButton
-                label="Record linked full / partial refund"
-                disabled={frozen}
-                onPress={() =>
-                  router.push({
-                    pathname: '/groups/[id]/refund',
-                    params: { id: group.id, originalId: expense.id },
-                  })
-                }
-              />
-            ) : null}
-            <ThemedText>
+            <ThemedText type="caption" themeColor="textSecondary">
               {group.members
                 .map(
                   (member) =>
@@ -533,33 +519,57 @@ function Details({ group }: { group: GroupWithDetails }) {
                 )
                 .join('\n')}
             </ThemedText>
-            {!expense.deletedAt ? (
+            <View style={styles.entryActions}>
+              {expense.kind === 'expense' &&
+              !expense.deletedAt &&
+              canEditExpense(group, expense, userId) ? (
+                <GroupButton
+                  compact
+                  label="Record linked full / partial refund"
+                  disabled={frozen}
+                  onPress={() =>
+                    router.push({
+                      pathname: '/groups/[id]/refund',
+                      params: { id: group.id, originalId: expense.id },
+                    })
+                  }
+                />
+              ) : null}
+              {!expense.deletedAt ? (
+                <GroupButton
+                  compact
+                  label="Link my cash payment / receipt to an account"
+                  onPress={() =>
+                    router.push({
+                      pathname: '/groups/[id]/cash',
+                      params: { id: group.id, expenseId: expense.id },
+                    })
+                  }
+                />
+              ) : null}
               <GroupButton
-                label="Link my cash payment / receipt to an account"
+                compact
+                label="Entry details / comments"
                 onPress={() =>
                   router.push({
-                    pathname: '/groups/[id]/cash',
-                    params: { id: group.id, expenseId: expense.id },
+                    pathname:
+                      expense.kind === 'refund'
+                        ? '/groups/[id]/refund'
+                        : '/groups/[id]/add-expense',
+                    params:
+                      expense.kind === 'refund'
+                        ? {
+                            id: group.id,
+                            originalId: expense.refundOfId ?? '',
+                            refundId: expense.id,
+                          }
+                        : { id: group.id, expenseId: expense.id },
                   })
                 }
               />
-            ) : null}
-            <GroupButton
-              label="Entry details / comments"
-              onPress={() =>
-                router.push({
-                  pathname:
-                    expense.kind === 'refund' ? '/groups/[id]/refund' : '/groups/[id]/add-expense',
-                  params:
-                    expense.kind === 'refund'
-                      ? { id: group.id, originalId: expense.refundOfId ?? '', refundId: expense.id }
-                      : { id: group.id, expenseId: expense.id },
-                })
-              }
-            />
-            {canEditExpense(group, expense, userId) ? (
-              <>
+              {canEditExpense(group, expense, userId) ? (
                 <GroupButton
+                  compact
                   label={
                     expense.deletedAt
                       ? 'Restore entry'
@@ -593,8 +603,8 @@ function Details({ group }: { group: GroupWithDetails }) {
                       );
                   }}
                 />
-              </>
-            ) : null}
+              ) : null}
+            </View>
           </Card>
         ))}
       <GroupButton label="Change history" selected={history} onPress={() => setHistory(!history)} />
@@ -682,4 +692,10 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   actions: { flexDirection: 'row', gap: Spacing.two, marginTop: Spacing.two },
   entryHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.two },
+  entryActions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.three,
+    marginTop: Spacing.one,
+  },
 });

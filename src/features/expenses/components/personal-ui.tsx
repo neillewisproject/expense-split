@@ -7,8 +7,10 @@ import { ThemedText } from '@/components/themed-text';
 import {
   Banner,
   Button,
+  Card,
   ChipGroup,
   inputWell,
+  neu,
   Screen,
   ScreenHeader,
   type ButtonVariant,
@@ -85,6 +87,75 @@ export function Field({
 
 const DESTRUCTIVE = /^(delete|remove|void|erase|discard|archive|sign out|leave)\b/i;
 
+function actionVariant(label: string, variant?: ButtonVariant): ButtonVariant {
+  return variant ?? (DESTRUCTIVE.test(label) ? 'danger' : 'secondary');
+}
+
+export type ItemAction = {
+  label: string;
+  onPress: () => void;
+  disabled?: boolean;
+  variant?: ButtonVariant;
+  accessibilityLabel?: string;
+};
+
+/**
+ * A list item on personal pages: raised card with a title, detail lines, an optional progress
+ * bar (0–1) and compact action buttons.
+ */
+export function ItemCard({
+  title,
+  details = [],
+  progress,
+  actions = [],
+}: {
+  title: string;
+  details?: (string | false | null | undefined)[];
+  progress?: { value: number; warning?: boolean };
+  actions?: ItemAction[];
+}) {
+  const theme = useTheme();
+  const fill = progress ? Math.min(1, Math.max(0, progress.value)) : 0;
+  return (
+    <Card>
+      <ThemedText type="smallBold">{title}</ThemedText>
+      {details.filter(Boolean).map((line, index) => (
+        <ThemedText key={index} type="caption" themeColor="textSecondary">
+          {line}
+        </ThemedText>
+      ))}
+      {progress ? (
+        <View style={[styles.track, { backgroundColor: theme.background }, neu(theme, 'insetSm')]}>
+          <View
+            style={[
+              styles.bar,
+              {
+                width: `${Math.max(4, Math.round(fill * 100))}%`,
+                backgroundColor: progress.warning ? theme.danger : theme.accentFill,
+              },
+            ]}
+          />
+        </View>
+      ) : null}
+      {actions.length ? (
+        <View style={styles.itemActions}>
+          {actions.map((action) => (
+            <Button
+              key={action.label}
+              label={action.label}
+              accessibilityLabel={action.accessibilityLabel}
+              onPress={action.onPress}
+              disabled={action.disabled}
+              variant={actionVariant(action.label, action.variant)}
+              style={styles.itemAction}
+            />
+          ))}
+        </View>
+      ) : null}
+    </Card>
+  );
+}
+
 /**
  * Page action button. Defaults to a calm tonal style; destructive wording (Delete, Remove,
  * Void…) is shown in red automatically. Pass `variant="primary"` for the page's main action.
@@ -105,7 +176,7 @@ export function Action({
       label={label}
       onPress={onPress}
       disabled={disabled}
-      variant={variant ?? (DESTRUCTIVE.test(label) ? 'danger' : 'secondary')}
+      variant={actionVariant(label, variant)}
     />
   );
 }
@@ -141,4 +212,13 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   multiline: { minHeight: 96, textAlignVertical: 'top' },
+  track: { height: 12, borderRadius: Radius.pill, padding: 2, overflow: 'hidden' },
+  bar: { height: '100%', borderRadius: Radius.pill },
+  itemActions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.three,
+    marginTop: Spacing.one,
+  },
+  itemAction: { flexGrow: 1, minHeight: 42, paddingHorizontal: Spacing.three },
 });

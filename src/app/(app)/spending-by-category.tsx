@@ -163,7 +163,6 @@ const styles = StyleSheet.create({
   scroll: { marginHorizontal: -Spacing.four },
   content: {
     padding: Spacing.four,
-    paddingTop: Spacing.two,
   },
   chartCard: {
     gap: Spacing.four,

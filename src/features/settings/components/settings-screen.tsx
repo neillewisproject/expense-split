@@ -8,6 +8,7 @@ import {
   Field,
   PersonalPage,
   message,
+  ItemCard,
 } from '@/features/expenses/components/personal-ui';
 import {
   EXPENSE_CATEGORIES,
@@ -167,11 +168,28 @@ function CategoryRuleControls({
   disabled: boolean;
 }) {
   return (
-    <>
-      <ThemedText>{label}</ThemedText>
-      <Action label={`Move earlier: ${label}`} disabled={disabled || first} onPress={earlier} />
-      <Action label={`Move later: ${label}`} disabled={disabled || last} onPress={later} />
-      <Action label={`Remove rule: ${label}`} disabled={disabled} onPress={remove} />
-    </>
+    <ItemCard
+      title={label}
+      actions={[
+        {
+          label: 'Earlier',
+          accessibilityLabel: `Move earlier: ${label}`,
+          disabled: disabled || first,
+          onPress: earlier,
+        },
+        {
+          label: 'Later',
+          accessibilityLabel: `Move later: ${label}`,
+          disabled: disabled || last,
+          onPress: later,
+        },
+        {
+          label: 'Remove',
+          accessibilityLabel: `Remove rule: ${label}`,
+          disabled,
+          onPress: remove,
+        },
+      ]}
+    />
   );
 }

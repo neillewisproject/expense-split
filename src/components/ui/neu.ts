@@ -7,8 +7,9 @@ export type Depth = 'raised' | 'raisedSm' | 'inset' | 'insetSm' | 'glow' | 'glow
 /**
  * Neumorphic depth. Surfaces share the background colour and get their shape from paired
  * shadows: a dark one bottom-right and a light one top-left. `inset` looks pressed in.
- * Shadows reach at most ~18px past an element, so keep ≥20px of unclipped space around raised
- * items (scroll views clip their content; put padding inside `contentContainerStyle`).
+ * Shadows reach at most ~18px past an element (glow ~16px). Anything that clips — a ScrollView or
+ * FlatList edge, or the bottom of a tab screen where the tab bar begins — must leave ≥20px of room,
+ * otherwise the glow is cut off in a straight line. Put padding inside `contentContainerStyle`.
  */
 export function neu(theme: ThemeColors, depth: Depth): ViewStyle {
   const { shadowDark: dark, shadowLight: light } = theme;
@@ -22,7 +23,7 @@ export function neu(theme: ThemeColors, depth: Depth): ViewStyle {
     case 'insetSm':
       return { boxShadow: `inset 2px 2px 5px ${dark}, inset -2px -2px 5px ${light}` };
     case 'glow':
-      return { boxShadow: `0px 6px 14px ${theme.accentGlow}, -3px -3px 8px ${light}` };
+      return { boxShadow: `0px 4px 12px ${theme.accentGlow}, -3px -3px 7px ${light}` };
     case 'glowSm':
       return { boxShadow: `0px 3px 8px ${theme.accentGlow}` };
     default:

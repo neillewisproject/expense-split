@@ -7,6 +7,7 @@ import {
   Field,
   PersonalPage,
   message,
+  ItemCard,
 } from '@/features/expenses/components/personal-ui';
 import { accountBalance } from '@/features/expenses/domain/ledger';
 import { amountToInput, formatMoney, parseAmount } from '@/features/expenses/domain/money';
@@ -100,68 +101,72 @@ export function AccountsScreen() {
           balance = message(err);
         }
         return (
-          <ThemedText
+          <ItemCard
             key={account.id}
-            onPress={() => {
-              setId(account.id);
-              setName(account.name);
-              setCurrency(account.currency);
-              setOpening(amountToInput(account.openingBalance, account.currency));
-            }}>
-            {account.name} · {balance}
-            {account.archived ? ' (archived)' : ''}
-            {'\n'}
-            <ThemedText
-              type="linkPrimary"
-              onPress={() => {
-                void save({ ...account, archived: !account.archived }, account.id).catch(
-                  (err: unknown) => setError(message(err)),
-                );
-              }}>
-              {account.archived ? 'Reopen' : 'Archive'}
-            </ThemedText>
-            {' · Tap name to edit'}
-          </ThemedText>
+            title={`${account.name}${account.archived ? ' (archived)' : ''}`}
+            details={[balance]}
+            actions={[
+              {
+                label: 'Edit',
+                onPress: () => {
+                  setId(account.id);
+                  setName(account.name);
+                  setCurrency(account.currency);
+                  setOpening(amountToInput(account.openingBalance, account.currency));
+                },
+              },
+              {
+                label: account.archived ? 'Reopen' : 'Archive',
+                onPress: () => {
+                  void save({ ...account, archived: !account.archived }, account.id).catch(
+                    (err: unknown) => setError(message(err)),
+                  );
+                },
+              },
+            ]}
+          />
         );
       })}
       <ThemedText type="smallBold">Linked group cash movements</ThemedText>
       {cash.map((movement) => (
-        <ThemedText key={movement.id}>
-          {movement.date} · {movement.groupName} · {movement.description} ·{' '}
-          {movement.direction === 'in' ? 'received' : 'paid'}{' '}
-          {formatMoney(movement.amount, movement.currency)} ·{' '}
-          {accounts.find((account) => account.id === movement.accountId)?.name ?? 'Account missing'}
-          {movement.voidedAt ? ' · voided' : ''}
-          {movement.personalEntryId ? ' · matched to a personal transaction' : ''}
-          {!movement.voidedAt ? (
-            <>
-              {'\n'}
-              <ThemedText
-                type="linkPrimary"
-                onPress={() =>
-                  Alert.alert(
-                    'Void this account movement?',
-                    movement.personalEntryId
-                      ? 'This removes the match. The existing personal transaction and its account effect remain unchanged. The group ledger is not changed.'
-                      : 'This reverses its effect on your manual account. It does not change the group ledger or send money.',
-                    [
-                      { text: 'Cancel', style: 'cancel' },
-                      {
-                        text: 'Void',
-                        style: 'destructive',
-                        onPress: () =>
-                          void voidCash(movement.id).catch((err: unknown) =>
-                            setError(message(err)),
-                          ),
-                      },
-                    ],
-                  )
-                }>
-                Void account movement
-              </ThemedText>
-            </>
-          ) : null}
-        </ThemedText>
+        <ItemCard
+          key={movement.id}
+          title={`${movement.groupName} · ${movement.description}`}
+          details={[
+            `${movement.date} · ${movement.direction === 'in' ? 'received' : 'paid'} ${formatMoney(movement.amount, movement.currency)}`,
+            accounts.find((account) => account.id === movement.accountId)?.name ??
+              'Account missing',
+            movement.voidedAt ? 'Voided' : null,
+            movement.personalEntryId ? 'Matched to a personal transaction' : null,
+          ]}
+          actions={
+            movement.voidedAt
+              ? []
+              : [
+                  {
+                    label: 'Void account movement',
+                    onPress: () =>
+                      Alert.alert(
+                        'Void this account movement?',
+                        movement.personalEntryId
+                          ? 'This removes the match. The existing personal transaction and its account effect remain unchanged. The group ledger is not changed.'
+                          : 'This reverses its effect on your manual account. It does not change the group ledger or send money.',
+                        [
+                          { text: 'Cancel', style: 'cancel' },
+                          {
+                            text: 'Void',
+                            style: 'destructive',
+                            onPress: () =>
+                              void voidCash(movement.id).catch((err: unknown) =>
+                                setError(message(err)),
+                              ),
+                          },
+                        ],
+                      ),
+                  },
+                ]
+          }
+        />
       ))}
     </PersonalPage>
   );

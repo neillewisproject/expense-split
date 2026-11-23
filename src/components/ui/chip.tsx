@@ -36,7 +36,7 @@ export function Chip({
       style={({ pressed }) => [
         styles.chip,
         { backgroundColor: selected ? theme.accentFill : theme.card },
-        neu(theme, pressed ? 'insetSm' : selected ? 'glow' : 'raisedSm'),
+        neu(theme, pressed ? 'insetSm' : selected ? 'glowSm' : 'raisedSm'),
         disabled && styles.disabled,
       ]}>
       {icon ? <Icon name={icon} size={16} color={selected ? color : theme.accent} /> : null}

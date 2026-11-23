@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { router } from 'expo-router';
+import { StyleSheet, View } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
+import { Card } from '@/components/ui';
+import { Spacing } from '@/constants/theme';
 import { useAuth } from '@/features/auth/auth-provider';
 import { usePersonalStore } from '@/features/accounts/store';
 import {
@@ -99,7 +102,7 @@ export function ReportsScreen() {
         onChange={(value) => setCurrency(value.toUpperCase())}
       />
       <Failure message={result.error ?? error ?? groupError ?? personalError} />
-      <ThemedText>
+      <ThemedText type="caption" themeColor="textSecondary">
         Calendar dates are inclusive. Custom periods compare against the immediately preceding equal
         number of days; calendar months/years compare against their preceding calendar period.
         Transfers, opening balances and linked group cash movements are excluded from these personal
@@ -107,91 +110,119 @@ export function ReportsScreen() {
       </ThemedText>
       {result.currentReport && !result.error ? (
         <>
-          <ThemedText type="smallBold">
-            Current: {result.period.start} through {result.period.end}
-          </ThemedText>
-          <ThemedText>
-            Personal income: {formatMoney(result.currentReport.income, currency)}
-          </ThemedText>
-          <ThemedText>
-            Personal consumption: {formatMoney(result.currentReport.spending, currency)}
-          </ThemedText>
-          <ThemedText>
-            Personal ledger surplus: {formatMoney(result.currentReport.net, currency)}
-          </ThemedText>
-          <ThemedText type="smallBold">
-            Previous: {result.previous.start} through {result.previous.end}
-          </ThemedText>
-          <ThemedText>
-            Personal income: {formatMoney(result.previousReport.income, currency)} · change{' '}
-            {formatMoney(result.change.income, currency)}
-          </ThemedText>
-          <ThemedText>
-            Personal consumption: {formatMoney(result.previousReport.spending, currency)} · change{' '}
-            {formatMoney(result.change.spending, currency)}
-          </ThemedText>
-          <ThemedText>
-            Personal ledger surplus: {formatMoney(result.previousReport.net, currency)} · change{' '}
-            {formatMoney(result.change.net, currency)}
-          </ThemedText>
-          <ThemedText type="smallBold">Own group shares — separate consumption figure</ThemedText>
-          {groupStatus === 'ready' && !groupError ? (
-            <ThemedText>
-              Current: {formatMoney(result.currentGroup.consumption, currency)} · previous:{' '}
-              {formatMoney(result.previousGroup.consumption, currency)}
+          <Card>
+            <ThemedText type="smallBold">
+              Current: {result.period.start} through {result.period.end}
             </ThemedText>
-          ) : (
-            <>
-              <ThemedText>
-                Group consumption is unavailable while loading or until the group load error is
-                resolved.
-              </ThemedText>
-              <Action
-                label="Retry loading group shares"
-                onPress={() => void loadGroups(userId ?? undefined)}
+            <StatRow
+              label="Personal income"
+              value={formatMoney(result.currentReport.income, currency)}
+            />
+            <StatRow
+              label="Personal consumption"
+              value={formatMoney(result.currentReport.spending, currency)}
+            />
+            <StatRow
+              label="Personal ledger surplus"
+              value={formatMoney(result.currentReport.net, currency)}
+            />
+          </Card>
+          <Card>
+            <ThemedText type="smallBold">
+              Previous: {result.previous.start} through {result.previous.end}
+            </ThemedText>
+            <StatRow
+              label="Personal income"
+              value={formatMoney(result.previousReport.income, currency)}
+              change={formatMoney(result.change.income, currency)}
+            />
+            <StatRow
+              label="Personal consumption"
+              value={formatMoney(result.previousReport.spending, currency)}
+              change={formatMoney(result.change.spending, currency)}
+            />
+            <StatRow
+              label="Personal ledger surplus"
+              value={formatMoney(result.previousReport.net, currency)}
+              change={formatMoney(result.change.net, currency)}
+            />
+          </Card>
+          <Card>
+            <ThemedText type="smallBold">Own group shares — separate consumption figure</ThemedText>
+            {groupStatus === 'ready' && !groupError ? (
+              <StatRow
+                label="Current · previous"
+                value={`${formatMoney(result.currentGroup.consumption, currency)} · ${formatMoney(result.previousGroup.consumption, currency)}`}
               />
-            </>
-          )}
-          <ThemedText>
-            {result.currentGroup.mappedGroups} mapped groups; {result.currentGroup.unmappedGroups}{' '}
-            unmapped groups excluded in {currency}. Claims use your approved member identity or an
-            explicit “me” selection, never names. Deleted rows and settlements are excluded; group
-            refunds subtract their base-currency share.
-          </ThemedText>
-          <ThemedText>
-            Group shares are NOT added to personal consumption. Personal payments may already
-            represent these costs; without transaction linkage, combining them would double count.
-          </ThemedText>
-          <ThemedText type="smallBold">Unposted recurring commitments</ThemedText>
-          {personalLoaded && !personalError ? (
-            <>
-              <ThemedText>
-                Pending drafts and at most the next ungenerated occurrence per active schedule, in
-                this period and currency. They are estimates, not included in posted totals.
-              </ThemedText>
-              {result.commitments.length ? (
-                result.commitments.map((item) => (
-                  <ThemedText key={item.id}>
-                    {item.date} · {item.description} · {formatMoney(item.amount, currency)} ·{' '}
-                    {item.entryType} · {item.draft ? 'awaiting approval' : 'next scheduled'}
+            ) : (
+              <>
+                <ThemedText type="small" themeColor="textSecondary">
+                  Group consumption is unavailable while loading or until the group load error is
+                  resolved.
+                </ThemedText>
+                <Action
+                  label="Retry loading group shares"
+                  onPress={() => void loadGroups(userId ?? undefined)}
+                />
+              </>
+            )}
+            <ThemedText type="caption" themeColor="textSecondary">
+              {result.currentGroup.mappedGroups} mapped groups; {result.currentGroup.unmappedGroups}{' '}
+              unmapped groups excluded in {currency}. Claims use your approved member identity or an
+              explicit “me” selection, never names. Deleted rows and settlements are excluded; group
+              refunds subtract their base-currency share.
+            </ThemedText>
+            <ThemedText type="caption" themeColor="textSecondary">
+              Group shares are NOT added to personal consumption. Personal payments may already
+              represent these costs; without transaction linkage, combining them would double count.
+            </ThemedText>
+          </Card>
+          <Card>
+            <ThemedText type="smallBold">Unposted recurring commitments</ThemedText>
+            {personalLoaded && !personalError ? (
+              <>
+                <ThemedText type="caption" themeColor="textSecondary">
+                  Pending drafts and at most the next ungenerated occurrence per active schedule, in
+                  this period and currency. They are estimates, not included in posted totals.
+                </ThemedText>
+                {result.commitments.length ? (
+                  result.commitments.map((item) => (
+                    <StatRow
+                      key={item.id}
+                      label={`${item.date} · ${item.description} · ${item.entryType} · ${item.draft ? 'awaiting approval' : 'next scheduled'}`}
+                      value={formatMoney(item.amount, currency)}
+                    />
+                  ))
+                ) : (
+                  <ThemedText type="small" themeColor="textSecondary">
+                    No unposted commitments in this period.
                   </ThemedText>
-                ))
-              ) : (
-                <ThemedText>No unposted commitments in this period.</ThemedText>
-              )}
-            </>
-          ) : (
-            <ThemedText>
-              Commitments are unavailable until personal data loads successfully.
-            </ThemedText>
-          )}
-          <ThemedText type="smallBold">Personal category consumption</ThemedText>
-          {result.currentReport.categories.map((item) => (
-            <ThemedText key={item.category}>
-              {categoryLabel(item.category)}: {formatMoney(item.amount, currency)}
-            </ThemedText>
-          ))}
+                )}
+              </>
+            ) : (
+              <ThemedText type="small" themeColor="textSecondary">
+                Commitments are unavailable until personal data loads successfully.
+              </ThemedText>
+            )}
+          </Card>
+          <Card>
+            <ThemedText type="smallBold">Personal category consumption</ThemedText>
+            {result.currentReport.categories.length ? (
+              result.currentReport.categories.map((item) => (
+                <StatRow
+                  key={item.category}
+                  label={categoryLabel(item.category)}
+                  value={formatMoney(item.amount, currency)}
+                />
+              ))
+            ) : (
+              <ThemedText type="small" themeColor="textSecondary">
+                No categorised spending in this period.
+              </ThemedText>
+            )}
+          </Card>
           <Action
+            variant="primary"
             label="View transactions for these dates"
             onPress={() =>
               router.push({
@@ -205,3 +236,28 @@ export function ReportsScreen() {
     </PersonalPage>
   );
 }
+
+/** Label on the left, value (and optional change from the previous period) on the right. */
+function StatRow({ label, value, change }: { label: string; value: string; change?: string }) {
+  return (
+    <View style={styles.statRow}>
+      <ThemedText type="small" themeColor="textSecondary" style={styles.statLabel}>
+        {label}
+      </ThemedText>
+      <View style={styles.statValue}>
+        <ThemedText type="smallBold">{value}</ThemedText>
+        {change ? (
+          <ThemedText type="caption" themeColor="textSecondary">
+            change {change}
+          </ThemedText>
+        ) : null}
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  statRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
+  statLabel: { flex: 1 },
+  statValue: { alignItems: 'flex-end' },
+});

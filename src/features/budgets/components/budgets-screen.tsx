@@ -9,6 +9,7 @@ import {
   Field,
   PersonalPage,
   message,
+  ItemCard,
 } from '@/features/expenses/components/personal-ui';
 import { EXPENSE_CATEGORIES, categoryLabel, localDate } from '@/features/expenses/domain/expense';
 import { formatMoney, parseAmount } from '@/features/expenses/domain/money';
@@ -111,6 +112,7 @@ export function BudgetsScreen() {
       />
       {budgets.map((budget) => {
         let summary: string;
+        let progress: ReturnType<typeof budgetProgress> | undefined;
         try {
           if (entriesStatus !== 'ready' || entriesError)
             throw new Error('Transactions are unavailable; reload before viewing this budget');
@@ -123,7 +125,7 @@ export function BudgetsScreen() {
               cashError)
           )
             throw new Error('Group data or cash matches are unavailable; reload before combining');
-          const progress = budgetProgress(
+          progress = budgetProgress(
             budget,
             entries,
             budgets,
@@ -134,20 +136,25 @@ export function BudgetsScreen() {
           summary = message(err);
         }
         return (
-          <ThemedText key={budget.id}>
-            {budget.name} · {budget.month} ·{' '}
-            {budget.basis === 'combined' ? 'personal + group shares' : 'personal only'}
-            {'\n'}
-            {summary}
-            {'\n'}
-            <ThemedText
-              type="linkPrimary"
-              onPress={() => {
-                void remove(budget.id).catch((err: unknown) => setError(message(err)));
-              }}>
-              Remove budget
-            </ThemedText>
-          </ThemedText>
+          <ItemCard
+            key={budget.id}
+            title={budget.name}
+            details={[
+              `${budget.month} · ${budget.basis === 'combined' ? 'personal + group shares' : 'personal only'}`,
+              summary,
+            ]}
+            progress={
+              progress ? { value: progress.percent / 100, warning: progress.warning } : undefined
+            }
+            actions={[
+              {
+                label: 'Remove budget',
+                onPress: () => {
+                  void remove(budget.id).catch((err: unknown) => setError(message(err)));
+                },
+              },
+            ]}
+          />
         );
       })}
       <Field label="Budget name" value={name} onChange={setName} />

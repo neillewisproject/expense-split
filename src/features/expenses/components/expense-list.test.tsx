@@ -1,5 +1,4 @@
-import { View as MockAnimatedView } from 'react-native';
-import { render, screen } from '@testing-library/react-native';
+import { fireEvent, render, screen } from '@testing-library/react-native';
 
 import { Colors } from '@/constants/theme';
 import type { StoredExpense } from '@/features/expenses/data/schema';
@@ -7,24 +6,23 @@ import { useTheme } from '@/hooks/use-theme';
 
 import { ExpenseList } from './expense-list';
 
+const mockSwipeable = { close: jest.fn() };
+let mockShowActions = false;
 jest.mock('react-native-gesture-handler/ReanimatedSwipeable', () => ({
   __esModule: true,
-  default: ({ children }: { children: React.ReactNode }) => children,
+  default: ({
+    children,
+    renderRightActions,
+  }: {
+    children: React.ReactNode;
+    renderRightActions?: (p: unknown, t: unknown, s: typeof mockSwipeable) => React.ReactNode;
+  }) => (
+    <>
+      {children}
+      {mockShowActions ? renderRightActions?.(undefined, undefined, mockSwipeable) : null}
+    </>
+  ),
 }));
-
-jest.mock('react-native-reanimated', () => {
-  const transition = {
-    duration: () => transition,
-    springify: () => transition,
-  };
-  return {
-    __esModule: true,
-    default: { View: MockAnimatedView },
-    FadeInDown: transition,
-    FadeOutUp: transition,
-    LinearTransition: transition,
-  };
-});
 
 jest.mock('@/hooks/use-theme', () => ({
   useTheme: jest.fn(),
@@ -90,4 +88,17 @@ describe('ExpenseList', () => {
       expect(screen.getByText('₹125.50')).toHaveStyle({ flexShrink: 0 });
     },
   );
+
+  it('closes the swipe before moving a transaction to trash', async () => {
+    mockShowActions = true;
+    const onDelete = jest.fn();
+    try {
+      await render(<ExpenseList expenses={[expense]} onDelete={onDelete} onSelect={jest.fn()} />);
+      await fireEvent.press(screen.getByRole('button', { name: 'Delete Lunch' }));
+      expect(mockSwipeable.close).toHaveBeenCalledTimes(1);
+      expect(onDelete).toHaveBeenCalledWith('expense-1');
+    } finally {
+      mockShowActions = false;
+    }
+  });
 });

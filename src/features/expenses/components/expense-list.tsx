@@ -1,7 +1,6 @@
 import type { ReactElement, ReactNode } from 'react';
 import ReanimatedSwipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 import { FlatList, Pressable, StyleSheet, View } from 'react-native';
-import Animated, { FadeInDown, FadeOutUp, LinearTransition } from 'react-native-reanimated';
 
 import { EmptyState } from '@/components/empty-state';
 import { ThemedText } from '@/components/themed-text';
@@ -178,33 +177,38 @@ export function ExpenseList({
         }
         const restoring = Boolean(item.expense.deletedAt);
         return (
-          <Animated.View
-            entering={FadeInDown.duration(180)}
-            exiting={FadeOutUp.duration(150)}
-            layout={LinearTransition.springify()}
-            style={[styles.cell, { backgroundColor: theme.card }, neu(theme, 'raisedSm')]}>
+          <View style={[styles.cell, { backgroundColor: theme.card }, neu(theme, 'raisedSm')]}>
             <View style={styles.clip}>
               <ReanimatedSwipeable
+                friction={2}
+                rightThreshold={40}
                 overshootRight={false}
-                renderRightActions={() => (
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel={`${restoring ? 'Restore' : 'Delete'} ${item.expense.description}`}
-                    onPress={() => onDelete(item.expense.id)}
-                    style={[
-                      styles.swipeAction,
-                      { backgroundColor: restoring ? theme.success : theme.danger },
-                    ]}>
-                    <Icon name={restoring ? 'restore' : 'trash'} size={20} color="#FFFFFF" />
-                    <ThemedText type="caption" style={styles.swipeText}>
-                      {restoring ? 'Restore' : 'Trash'}
-                    </ThemedText>
-                  </Pressable>
+                renderRightActions={(_progress, _translation, swipeable) => (
+                  <View style={styles.actions}>
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={`${restoring ? 'Restore' : 'Delete'} ${item.expense.description}`}
+                      onPress={() => {
+                        // Close first so a failed delete never leaves the action half-revealed.
+                        swipeable.close();
+                        onDelete(item.expense.id);
+                      }}
+                      style={({ pressed }) => [
+                        styles.swipeAction,
+                        { backgroundColor: restoring ? theme.success : theme.danger },
+                        pressed && styles.pressed,
+                      ]}>
+                      <Icon name={restoring ? 'restore' : 'trash'} size={20} color="#FFFFFF" />
+                      <ThemedText type="caption" style={styles.swipeText}>
+                        {restoring ? 'Restore' : 'Trash'}
+                      </ThemedText>
+                    </Pressable>
+                  </View>
                 )}>
                 <TransactionRow expense={item.expense} onPress={() => onSelect(item.expense.id)} />
               </ReanimatedSwipeable>
             </View>
-          </Animated.View>
+          </View>
         );
       }}
     />
@@ -215,6 +219,8 @@ const styles = StyleSheet.create({
   listContent: {
     flexGrow: 1,
     paddingHorizontal: ScreenPadding,
+    // The list clips at its top edge; leave room for the shadows of header banners.
+    paddingTop: Spacing.three,
   },
   dayHeading: {
     fontWeight: 600,
@@ -244,12 +250,19 @@ const styles = StyleSheet.create({
     flexShrink: 0,
     textAlign: 'right',
   },
+  actions: {
+    width: 104,
+    padding: Spacing.two,
+    paddingLeft: Spacing.one,
+  },
   swipeAction: {
-    width: 88,
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 2,
+    borderRadius: Radius.md,
   },
+  pressed: { opacity: 0.8 },
   swipeText: {
     color: '#FFFFFF',
     fontWeight: 700,

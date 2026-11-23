@@ -632,7 +632,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: ScreenPadding,
     right: ScreenPadding,
-    marginBottom: Spacing.three,
+    marginBottom: ScreenPadding,
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.two,

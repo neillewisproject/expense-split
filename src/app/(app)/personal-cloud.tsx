@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import { Alert, Pressable } from 'react-native';
-
+import { Alert } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
-import { PersonalPage } from '@/features/expenses/components/personal-ui';
+import { Chip } from '@/components/ui';
+import { Action, PersonalPage } from '@/features/expenses/components/personal-ui';
 import { useAuth } from '@/features/auth/auth-provider';
 import { createBackup, restoreBackup } from '@/features/import-export/data/portability';
 import { shareTextFile } from '@/features/import-export/device-files';
@@ -72,8 +72,8 @@ function PersonalCloudPanel({ userId, isConfigured }: { userId?: string; isConfi
         </ThemedText>
       ) : (
         <>
-          <Pressable
-            accessibilityRole="button"
+          <Action
+            label="Check and review cloud copy"
             disabled={busy}
             onPress={() =>
               void run(async (id) => {
@@ -88,24 +88,23 @@ function PersonalCloudPanel({ userId, isConfigured }: { userId?: string; isConfi
                     : 'No cloud copy exists yet.',
                 );
               })
-            }>
-            <ThemedText type="linkPrimary">Check and review cloud copy</ThemedText>
-          </Pressable>
+            }
+          />
           {cloud ? <ThemedText>Cloud: {summary(cloud)}</ThemedText> : null}
-          <Pressable
-            accessibilityRole="button"
+          <Action
+            label="Preview current local records"
             disabled={busy}
             onPress={() =>
               void run(async (id) => {
                 const snapshot = previewBackup(await createBackup());
                 if (account.current === id) setLocal(snapshot);
               })
-            }>
-            <ThemedText type="linkPrimary">Preview current local records</ThemedText>
-          </Pressable>
+            }
+          />
           {local ? <ThemedText>Local: {summary(local)}</ThemedText> : null}
-          <Pressable
-            accessibilityRole="button"
+          <Action
+            variant="primary"
+            label="Upload reviewed local snapshot"
             disabled={busy || !local || revision === null}
             onPress={() => {
               if (!local || revision === null) return;
@@ -130,11 +129,10 @@ function PersonalCloudPanel({ userId, isConfigured }: { userId?: string; isConfi
                   },
                 ],
               );
-            }}>
-            <ThemedText type="linkPrimary">Upload reviewed local snapshot</ThemedText>
-          </Pressable>
-          <Pressable
-            accessibilityRole="button"
+            }}
+          />
+          <Action
+            label="Export current records before restoring"
             disabled={busy}
             onPress={() =>
               void run(async (id) => {
@@ -144,19 +142,18 @@ function PersonalCloudPanel({ userId, isConfigured }: { userId?: string; isConfi
                     'Export dialog completed. Confirm you saved the file before restoring.',
                   );
               })
-            }>
-            <ThemedText type="linkPrimary">Export current records before restoring</ThemedText>
-          </Pressable>
-          <Pressable
-            accessibilityRole="checkbox"
-            accessibilityState={{ checked: exported }}
-            onPress={() => setExported(!exported)}>
-            <ThemedText>
-              {exported ? '[x]' : '[ ]'} I saved a recovery copy of my current records
-            </ThemedText>
-          </Pressable>
-          <Pressable
-            accessibilityRole="button"
+            }
+          />
+          <Chip
+            role="checkbox"
+            icon={exported ? 'checked' : 'unchecked'}
+            selected={exported}
+            label="I saved a recovery copy of my current records"
+            onPress={() => setExported(!exported)}
+          />
+          <Action
+            variant="primary"
+            label="Restore reviewed cloud records"
             disabled={busy || !cloud || !exported}
             onPress={() => {
               if (!cloud) return;
@@ -186,11 +183,10 @@ function PersonalCloudPanel({ userId, isConfigured }: { userId?: string; isConfi
                   },
                 ],
               );
-            }}>
-            <ThemedText type="linkPrimary">Restore reviewed cloud records</ThemedText>
-          </Pressable>
-          <Pressable
-            accessibilityRole="button"
+            }}
+          />
+          <Action
+            label="Delete reviewed cloud copy"
             disabled={busy || !cloud || revision === null}
             onPress={() => {
               if (revision === null) return;
@@ -215,9 +211,8 @@ function PersonalCloudPanel({ userId, isConfigured }: { userId?: string; isConfi
                   },
                 ],
               );
-            }}>
-            <ThemedText type="linkPrimary">Delete reviewed cloud copy</ThemedText>
-          </Pressable>
+            }}
+          />
         </>
       )}
       {busy ? <ThemedText>Working…</ThemedText> : null}

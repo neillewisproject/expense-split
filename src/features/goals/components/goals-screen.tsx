@@ -8,6 +8,7 @@ import {
   Field,
   PersonalPage,
   message,
+  ItemCard,
 } from '@/features/expenses/components/personal-ui';
 import { localDate } from '@/features/expenses/domain/expense';
 import { amountToInput, formatMoney, parseAmount } from '@/features/expenses/domain/money';
@@ -104,34 +105,37 @@ export function GoalsScreen() {
             let text: string;
             try {
               const position = savingsPosition(account, goals, contributions, entries, groupCash);
-              text = `${account.name}: ${formatMoney(position.balance, account.currency)} cash; ${formatMoney(position.reserved, account.currency)} reserved; ${formatMoney(position.available, account.currency)} unreserved${position.underfunded ? ' — GOALS UNDERFUNDED' : ''}`;
+              text = `${formatMoney(position.balance, account.currency)} cash · ${formatMoney(position.reserved, account.currency)} reserved · ${formatMoney(position.available, account.currency)} unreserved${position.underfunded ? ' — GOALS UNDERFUNDED' : ''}`;
             } catch (err) {
               text = message(err);
             }
-            return <ThemedText key={account.id}>{text}</ThemedText>;
+            return <ItemCard key={account.id} title={account.name} details={[text]} />;
           })
         : null}
       {goals.map((goal) => {
         const saved = goalSaved(goal.id, contributions);
         return (
-          <ThemedText key={goal.id}>
-            {goal.name}: {formatMoney(saved, goal.currency)} /{' '}
-            {formatMoney(goal.target, goal.currency)}
-            {saved >= goal.target ? ' — target reserved' : ''}
-            {goal.targetDate ? ` · target ${goal.targetDate}` : ''}
-            {'\n'}
-            <ThemedText
-              type="linkPrimary"
-              onPress={() => {
-                setEditing(goal.id);
-                setName(goal.name);
-                setAccountId(goal.accountId);
-                setTarget(amountToInput(goal.target, goal.currency));
-                setTargetDate(goal.targetDate ?? '');
-              }}>
-              Edit goal
-            </ThemedText>
-          </ThemedText>
+          <ItemCard
+            key={goal.id}
+            title={goal.name}
+            details={[
+              `${formatMoney(saved, goal.currency)} of ${formatMoney(goal.target, goal.currency)}${saved >= goal.target ? ' — target reserved' : ''}`,
+              goal.targetDate ? `Target date ${goal.targetDate}` : null,
+            ]}
+            progress={{ value: goal.target > 0 ? saved / goal.target : 0 }}
+            actions={[
+              {
+                label: 'Edit goal',
+                onPress: () => {
+                  setEditing(goal.id);
+                  setName(goal.name);
+                  setAccountId(goal.accountId);
+                  setTarget(amountToInput(goal.target, goal.currency));
+                  setTargetDate(goal.targetDate ?? '');
+                },
+              },
+            ]}
+          />
         );
       })}
       <ThemedText type="smallBold">{editing ? 'Edit savings goal' : 'New savings goal'}</ThemedText>

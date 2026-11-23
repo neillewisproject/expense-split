@@ -88,11 +88,14 @@ export function GroupButton({
   onPress,
   disabled = false,
   selected,
+  compact = false,
 }: {
   label: string;
   onPress: () => void;
   disabled?: boolean;
   selected?: boolean;
+  /** Shorter button that shares a wrapping row with its siblings. */
+  compact?: boolean;
 }) {
   const theme = useTheme();
   const toggle = selected !== undefined;
@@ -107,6 +110,7 @@ export function GroupButton({
       onPress={onPress}
       style={({ pressed }) => [
         styles.button,
+        compact && styles.compact,
         { backgroundColor: background },
         neu(theme, pressed ? 'insetSm' : disabled ? 'flat' : selected ? 'glow' : 'raisedSm'),
         disabled && styles.disabled,
@@ -145,5 +149,6 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.two,
   },
   label: { flexShrink: 1, textAlign: 'center' },
+  compact: { minHeight: 42, flexGrow: 1, flexBasis: '45%' },
   disabled: { opacity: 0.5 },
 });

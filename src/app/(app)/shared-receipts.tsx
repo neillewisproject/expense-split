@@ -1,10 +1,10 @@
 import { Image } from 'expo-image';
 import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { Alert, Pressable } from 'react-native';
+import { Alert } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
-import { PersonalPage } from '@/features/expenses/components/personal-ui';
+import { Action, Failure, PersonalPage } from '@/features/expenses/components/personal-ui';
 import { useAuth } from '@/features/auth/auth-provider';
 import { useGroupsStore } from '@/features/groups/store';
 import { listSharedReceipts, uploadSharedReceipt } from '@/features/receipts/cloud';
@@ -81,12 +81,11 @@ function ReceiptPanel({
         <ThemedText>Open a signed-in shared expense to view receipts.</ThemedText>
       ) : (
         <>
-          <Pressable
-            accessibilityRole="button"
+          <Action
+            label="Refresh private receipt links"
             disabled={busy}
-            onPress={() => void run(() => refresh())}>
-            <ThemedText type="linkPrimary">Refresh private receipt links</ThemedText>
-          </Pressable>
+            onPress={() => void run(() => refresh())}
+          />
           {receipts.map((receipt) => (
             <Image
               key={receipt.path}
@@ -96,22 +95,20 @@ function ReceiptPanel({
               accessibilityLabel="Shared receipt photo"
             />
           ))}
-          <Pressable
-            accessibilityRole="button"
+          <Action
+            label="Previous receipt page"
             disabled={busy || offset === 0}
-            onPress={() => void run(() => refresh(Math.max(0, offset - 100)))}>
-            <ThemedText type="linkPrimary">Previous receipt page</ThemedText>
-          </Pressable>
-          <Pressable
-            accessibilityRole="button"
+            onPress={() => void run(() => refresh(Math.max(0, offset - 100)))}
+          />
+          <Action
+            label="Next receipt page"
             disabled={busy || receipts.length < 100}
-            onPress={() => void run(() => refresh(offset + 100))}>
-            <ThemedText type="linkPrimary">Next receipt page</ThemedText>
-          </Pressable>
+            onPress={() => void run(() => refresh(offset + 100))}
+          />
           {expense.receipts.map((uri, index) => (
-            <Pressable
+            <Action
               key={uri}
-              accessibilityRole="button"
+              label={`Upload local receipt ${index + 1}`}
               disabled={busy || !canUpload}
               onPress={() => {
                 Alert.alert(
@@ -129,14 +126,13 @@ function ReceiptPanel({
                     },
                   ],
                 );
-              }}>
-              <ThemedText type="linkPrimary">Upload local receipt {index + 1}</ThemedText>
-            </Pressable>
+              }}
+            />
           ))}
         </>
       )}
-      {busy ? <ThemedText>Working…</ThemedText> : null}
-      {error ? <ThemedText accessibilityRole="alert">{error}</ThemedText> : null}
+      {busy ? <ThemedText themeColor="textSecondary">Working…</ThemedText> : null}
+      <Failure message={error} />
     </PersonalPage>
   );
 }

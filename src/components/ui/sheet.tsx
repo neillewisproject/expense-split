@@ -134,7 +134,7 @@ const styles = StyleSheet.create({
   },
   title: { flex: 1 },
   // Padding lives inside the ScrollView so shadows of chips and buttons are not clipped.
-  content: { gap: Spacing.three, padding: ScreenPadding, paddingTop: Spacing.two },
+  content: { gap: Spacing.three, padding: ScreenPadding, paddingTop: Spacing.three },
   footer: { padding: ScreenPadding, paddingTop: Spacing.two, gap: Spacing.two },
   search: {
     minHeight: 48,
