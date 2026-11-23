@@ -33,14 +33,19 @@ Each milestone adds a feature and teaches the industry-standard tool for that jo
 ```
 src/
   app/                 # ROUTES ONLY. Every file is a screen (Expo Router).
-    _layout.tsx        #   root layout: theme + tab navigator
-    index.tsx          #   "/"        -> Expenses tab
-    groups.tsx         #   "/groups"  -> Groups tab
+    _layout.tsx        #   root stack, theme, modal presentation
+    (tabs)/            #   native Expenses and Groups tabs
+    add-expense.tsx    #   add/edit modal form
+    expenses/[id].tsx  #   expense detail route
   components/          # shared, dumb UI (ThemedText, EmptyState, ...)
   features/            # feature modules: domain logic, stores, feature UI
     expenses/
-      domain/          #   pure TypeScript: money, splitting, balances (+ tests)
+      components/      #   expense form, grouped FlatList (+ tests)
+      data/            #   Drizzle schema and SQLite database
+      domain/          #   pure TypeScript: money, validation, splitting (+ tests)
+      store.ts         #   Zustand state backed by SQLite
     groups/
+drizzle/               # generated, bundled SQLite migrations
   constants/theme.ts   # colors, spacing, fonts
   hooks/               # shared hooks
 ```
@@ -62,6 +67,7 @@ npm test             # run unit/component tests  (npm run test:watch while codin
 npm run check        # typecheck + lint + format check + tests (run before every commit)
 npm run format       # auto-format everything
 npm run doctor       # diagnose dependency/config problems
+npm run db:generate  # generate a SQLite migration from the Drizzle schema
 ```
 
 Phone and computer must be on the **same Wi-Fi**. If they can't connect, use `npx expo start --tunnel`.
@@ -105,11 +111,13 @@ Learn:
 
 Build:
 
-- [ ] Add-expense modal: amount, description, category, date.
-- [ ] Expenses list grouped by day, with the monthly total in the summary card.
-- [ ] Swipe-to-delete (Gesture Handler `Swipeable`) and tap-to-edit.
-- [ ] Data survives app restarts (SQLite).
-- [ ] Component tests: the add form validates input; the list renders items.
+- [x] Add-expense modal: amount, description, category, date, opened from the bottom action button.
+- [x] Expenses list grouped by day, with the monthly total in the summary card.
+- [x] Swipe-to-delete (Gesture Handler `ReanimatedSwipeable`) and tap-to-edit.
+- [x] Data survives app restarts (SQLite, Zustand store, Drizzle schema and generated migrations).
+- [x] Component tests: the add form validates input; the list renders items.
+
+The migration workflow is `npm run db:generate` after changing the schema, then review and commit the generated `drizzle/` files. Runtime migrations are applied before the store reads or writes data.
 
 ---
 

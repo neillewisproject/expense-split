@@ -14,7 +14,7 @@ export default function GroupsScreen() {
 
         <EmptyState
           title="No groups yet"
-          message="Milestone 2: create groups, add members, split expenses and settle up."
+          message="Groups, shared expenses and bill splitting are coming in Milestone 2."
         />
       </SafeAreaView>
     </ThemedView>
