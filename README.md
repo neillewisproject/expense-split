@@ -27,6 +27,37 @@ Phone and PC must be on the same Wi-Fi network; otherwise use `npx expo start --
 
 Add packages with `npx expo install <package>` so versions match the Expo SDK.
 
+## AI development setup
+
+The repository includes a Copilot-first setup tailored to this stack. It does not install plugins, change models, grant permissions, or run deployments.
+
+- **Shared instructions:** [AGENTS.md](./AGENTS.md) defines architecture, data invariants, SDK documentation checks, validation, and safety boundaries.
+- **Copilot instructions:** [.github/copilot-instructions.md](./.github/copilot-instructions.md) points to the shared context. Files in [.github/instructions/](./.github/instructions/) add mobile, data, and test guidance when their paths match.
+- **Agents:** [Mobile Builder](./.github/agents/mobile-builder.agent.md) implements features/fixes; [Mobile Reviewer](./.github/agents/mobile-reviewer.agent.md) and [Learning Coach](./.github/agents/learning-coach.agent.md) use read/search tools only. Agent formats/tool enforcement differ between AI clients; this configuration targets Copilot.
+- **Skills:** [expo-debug](./.github/skills/expo-debug/SKILL.md), [local-first-sync](./.github/skills/local-first-sync/SKILL.md), and [milestone-delivery](./.github/skills/milestone-delivery/SKILL.md) are task-specific workflows, loaded on demand rather than repeating everything in every request.
+
+### Activate and verify in VS Code
+
+1. Open **the `expense-split` folder itself**, not only its parent `Mobile` folder. Repository-native customization discovery is most reliable from the project root.
+2. Select the Copilot harness in Chat and run **Chat: Open Customizations** from the Command Palette.
+3. Confirm the agents, instructions, and skills appear without file errors. Start a fresh chat; existing sessions may retain old customization state.
+4. Choose an agent from the agent dropdown or type `/` to find a skill. Try a small known task and inspect which tools it uses. Discovery alone is not evidence of correct runtime behavior.
+
+Example requests:
+
+```text
+Mobile Builder: Fix this expense layout and preserve large-text accessibility.
+Mobile Reviewer: Review the supplied group-sync changes; do not edit files.
+Learning Coach: Explain how a settlement affects balances, then give me one exercise.
+/expo-debug Diagnose this getSnapshot error using the attached Metro log.
+/local-first-sync Add a field without uploading existing local groups.
+/milestone-delivery Implement the next roadmap milestone with acceptance checks.
+```
+
+Select the named agents in the dropdown; the prefixes above describe the intended role, not special chat syntax. Skills can also be selected automatically when supported. `AGENTS.md` and the skill format are reusable, but other harnesses may require their own discovery locations. Do not duplicate or install external skills blindly.
+
+Official references: [Copilot instructions](https://docs.github.com/en/copilot/how-tos/copilot-in-your-ide/customize-copilot/configure-custom-instructions/add-repository-instructions-in-your-ide), [custom agents](https://code.visualstudio.com/docs/agent-customization/custom-agents), and [agent skills](https://code.visualstudio.com/docs/agent-customization/agent-skills).
+
 ## Enable shared groups (Milestone 4)
 
 1. Create a Supabase project and run [`supabase/migrations/20261123000000_shared_groups.sql`](./supabase/migrations/20261123000000_shared_groups.sql) in its SQL Editor (or apply it with the Supabase CLI).
