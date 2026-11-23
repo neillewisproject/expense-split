@@ -123,7 +123,8 @@ The migration workflow is `npm run db:generate` after changing the schema, then 
 
 ## Milestone 2: Groups & splitting (1–2 weeks)
 
-**Goal:** the core Splitwise logic, still local-only.
+**Goal:** the core Splitwise logic, still local-only. Group, member, expense and split data
+is stored on-device in SQLite; no account or sync is involved yet.
 
 Learn:
 
@@ -133,11 +134,13 @@ Learn:
 
 Build:
 
-- [ ] Create a group, add members by name.
-- [ ] Add a group expense: who paid, split equally (`splitEqually`) or by shares (`splitByShares`).
-- [ ] Group balances screen using `computeBalances`.
-- [ ] **Exercise:** implement `simplifyDebts(balances)` in `balances.ts` (greedy: match biggest creditor with biggest debtor). Make the `it.todo` tests in `domain.test.ts` real tests first (TDD).
-- [ ] "Settle up" records a payment as a special expense.
+- [x] Create a group, add members by name.
+- [x] Add a group expense: who paid, split equally (`splitEqually`) or by shares (`splitByShares`).
+- [x] Group balances screen using `computeBalances`.
+- [x] **Exercise:** implement `simplifyDebts(balances)` in `balances.ts` (greedy: match biggest creditor with biggest debtor). The `it.todo` tests in `domain.test.ts` are now real tests.
+- [x] "Settle up" records a payment as a special expense.
+
+The second Drizzle migration creates groups, members, group expenses and split rows with foreign keys. A settlement is recorded as a group expense paid by the debtor and split entirely to the creditor, so the existing balance calculation nets it out.
 
 ---
 

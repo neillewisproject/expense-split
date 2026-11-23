@@ -1,4 +1,4 @@
-import { computeBalances, type Expense } from './balances';
+import { computeBalances, simplifyDebts, type Expense } from './balances';
 import { formatMoney, parseAmount } from './money';
 import { splitByShares, splitEqually } from './split';
 
@@ -46,6 +46,21 @@ describe('splitByShares', () => {
   it('ignores members with a zero share', () => {
     expect(splitByShares(500, { a: 1, b: 0 })).toEqual({ a: 500 });
   });
+
+  it('rejects negative or non-finite shares', () => {
+    expect(() => splitByShares(500, { a: 1, b: -1 })).toThrow(
+      'Shares must be finite, non-negative numbers',
+    );
+    expect(() => splitByShares(500, { a: Number.POSITIVE_INFINITY })).toThrow(
+      'Shares must be finite, non-negative numbers',
+    );
+  });
+
+  it('rejects a share total that overflows', () => {
+    expect(() => splitByShares(500, { a: Number.MAX_VALUE, b: Number.MAX_VALUE })).toThrow(
+      'At least one member needs a finite positive share',
+    );
+  });
 });
 
 describe('computeBalances', () => {
@@ -75,9 +90,35 @@ describe('computeBalances', () => {
   });
 });
 
-// Milestone 2 exercise: implement `simplifyDebts(balances)` in balances.ts, then turn these into real tests.
 describe('simplifyDebts', () => {
-  it.todo('returns no settlements when everyone is even');
-  it.todo('produces at most (members - 1) payments');
-  it.todo('settlements fully zero out every balance');
+  it('returns no settlements when everyone is even', () => {
+    expect(simplifyDebts({ asha: 0, ben: 0, chen: 0 })).toEqual([]);
+  });
+
+  it('produces no more than members minus one payments', () => {
+    const balances = { asha: 900, ben: 400, chen: -300, diya: -500, eli: -500 };
+    expect(simplifyDebts(balances).length).toBeLessThanOrEqual(Object.keys(balances).length - 1);
+  });
+
+  it('fully settles balances using paise without self-payments', () => {
+    const balances = { asha: 2000, ben: -700, chen: -1300 };
+    const settlements = simplifyDebts(balances);
+    const remaining: Record<string, number> = { ...balances };
+
+    for (const settlement of settlements) {
+      expect(settlement.amount).toBeGreaterThan(0);
+      expect(settlement.from).not.toBe(settlement.to);
+      remaining[settlement.from] = (remaining[settlement.from] ?? 0) + settlement.amount;
+      remaining[settlement.to] = (remaining[settlement.to] ?? 0) - settlement.amount;
+    }
+
+    expect(remaining).toEqual({ asha: 0, ben: 0, chen: 0 });
+  });
+
+  it('rejects balances that cannot be settled exactly', () => {
+    expect(() => simplifyDebts({ asha: 100 })).toThrow('Balances must sum to zero');
+    expect(() => simplifyDebts({ asha: Number.POSITIVE_INFINITY, ben: 0 })).toThrow(
+      'Balances must be safe integer minor units',
+    );
+  });
 });

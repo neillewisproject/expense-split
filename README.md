@@ -4,7 +4,7 @@ An expense tracker with group bill splitting, built with Expo (React Native) + T
 
 **Start here → [LEARNING_ROADMAP.md](./LEARNING_ROADMAP.md)**
 
-Milestone 1 is implemented: add, edit and delete personal expenses, with monthly totals and local SQLite persistence. See the roadmap for the stack and build notes.
+Milestones 1 and 2 are implemented: local personal and group expenses, member balances, equal/share splitting and settlement suggestions. All data stays on-device in SQLite. See the roadmap for the stack and build notes.
 
 ## Run it on your phone
 

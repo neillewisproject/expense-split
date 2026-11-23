@@ -23,9 +23,16 @@ export function splitEqually(total: MinorUnits, memberIds: MemberId[]): Split {
  * Uses the largest-remainder method so rounding never loses or creates paise.
  */
 export function splitByShares(total: MinorUnits, shares: Record<MemberId, number>): Split {
+  const allShares = Object.values(shares);
+  if (allShares.some((share) => !Number.isFinite(share) || share < 0)) {
+    throw new Error('Shares must be finite, non-negative numbers');
+  }
+
   const entries = Object.entries(shares).filter(([, share]) => share > 0);
   const totalShares = entries.reduce((sum, [, share]) => sum + share, 0);
-  if (totalShares === 0) throw new Error('At least one member needs a positive share');
+  if (!Number.isFinite(totalShares) || totalShares === 0) {
+    throw new Error('At least one member needs a finite positive share');
+  }
 
   const parts = entries.map(([id, share]) => {
     const exact = (total * share) / totalShares;

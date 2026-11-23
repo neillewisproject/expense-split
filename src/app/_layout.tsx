@@ -15,6 +15,8 @@ export default function RootLayout() {
         <AnimatedSplashOverlay />
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="groups/create" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="groups/[id]" />
           <Stack.Screen name="expenses/[id]" />
           <Stack.Screen name="add-expense" options={{ presentation: 'modal' }} />
         </Stack>
