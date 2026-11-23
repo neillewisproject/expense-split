@@ -7,6 +7,7 @@ import { usePersonalStore } from '@/features/accounts/store';
 import { budgets } from '@/features/budgets/data/schema';
 import { recurringDrafts, recurringRules } from '@/features/recurrence/data/schema';
 import { personalSettings } from '@/features/settings/data/schema';
+import { parseCategoryRules } from '@/features/settings/domain/category-rules';
 import { savingsGoals, goalContributions } from '@/features/goals/data/schema';
 import { useGoalsStore } from '@/features/goals/store';
 import { useExpensesStore } from '@/features/expenses/store';
@@ -50,7 +51,7 @@ export async function createBackup(): Promise<string> {
     return JSON.stringify(
       {
         format: 'expense-split-personal',
-        version: 6,
+        version: 7,
         exportedAt: new Date().toISOString(),
         omittedReceiptCount: entries.reduce(
           (count, entry) => count + getReceiptUris(entry).length,
@@ -67,6 +68,7 @@ export async function createBackup(): Promise<string> {
         settings: {
           defaultCurrency: preferences?.defaultCurrency ?? 'INR',
           categories: JSON.parse(preferences?.categories ?? '[]') as string[],
+          categoryRules: parseCategoryRules(preferences?.categoryRules ?? '[]'),
         },
       },
       null,
@@ -134,6 +136,7 @@ export async function restoreBackup(text: string, beforeCommit?: () => void): Pr
           id: 'personal',
           defaultCurrency: backup.settings.defaultCurrency,
           categories: JSON.stringify(backup.settings.categories),
+          categoryRules: JSON.stringify(backup.settings.categoryRules),
         })
         .run();
     });

@@ -1,4 +1,5 @@
-import { groupReport } from './group-report';
+import { groupReport, groupSummary } from './group-report';
+import { formatMoney } from '@/features/expenses/domain/money';
 import type { GroupExpense, GroupWithDetails } from './group';
 
 it('reconciles multi-payer consumption, refunds, and settlements without counting payments as spending', () => {
@@ -82,4 +83,18 @@ it('reconciles multi-payer consumption, refunds, and settlements without countin
   expect(() => groupReport({ ...group, expenses: [{ ...meal, currency: 'USD' }] })).toThrow(
     'currency mismatch',
   );
+  const summary = groupSummary({
+    ...group,
+    inviteCode: 'private-invite',
+    expenses: group.expenses.map((expense) => ({
+      ...expense,
+      notes: 'private-note',
+      receipts: ['file:private-photo'],
+    })),
+  });
+  expect(summary).toContain(`Net group spending: ${formatMoney(800, 'INR')}`);
+  expect(summary).toContain(`Recorded settlements: ${formatMoney(200, 'INR')}`);
+  expect(summary).toContain(`b pays a ${formatMoney(400, 'INR')}`);
+  expect(summary).toContain('No payment is sent or verified');
+  expect(summary).not.toMatch(/private-invite|private-note|private-photo/);
 });

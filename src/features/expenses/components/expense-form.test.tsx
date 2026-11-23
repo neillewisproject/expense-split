@@ -131,4 +131,31 @@ describe('ExpenseForm', () => {
     expect(await screen.findByText('Choose two different accounts for a transfer')).toBeTruthy();
     expect(onSave).not.toHaveBeenCalled();
   });
+
+  it('uses category rules only after explicit acceptance and preserves manual overrides', async () => {
+    const onSave = jest.fn().mockResolvedValue(undefined);
+    await render(
+      <ExpenseForm
+        initialValues={{ ...createDefaultExpenseValues(), description: 'Train cafe', amount: '20' }}
+        categoryRules={[
+          { id: 'train', contains: 'train', entryType: 'expense', category: 'transport' },
+        ]}
+        onSave={onSave}
+        saveError={null}
+        submitLabel="Save expense"
+      />,
+    );
+    expect(screen.getByRole('radio', { name: 'Other' })).toHaveProp('accessibilityState', {
+      checked: true,
+    });
+    await fireEvent.press(
+      screen.getByRole('button', { name: 'Use suggested category: Transport' }),
+    );
+    expect(screen.getByRole('radio', { name: 'Transport' })).toHaveProp('accessibilityState', {
+      checked: true,
+    });
+    await fireEvent.press(screen.getByRole('radio', { name: 'Food' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Save expense' }));
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ category: 'food' }), []);
+  });
 });

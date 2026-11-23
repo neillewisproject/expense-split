@@ -31,6 +31,7 @@ export default function AddExpenseScreen() {
   const expense = id ? expenses.find((item) => item.id === id) : undefined;
   const accounts = usePersonalStore((state) => state.accounts);
   const categories = usePersonalStore((state) => state.categories);
+  const categoryRules = usePersonalStore((state) => state.categoryRules);
   const defaultCurrency = usePersonalStore((state) => state.defaultCurrency);
   const loaded = usePersonalStore((state) => state.loaded);
   const loadPersonal = usePersonalStore((state) => state.load);
@@ -161,6 +162,7 @@ export default function AddExpenseScreen() {
           saveError={saveError ?? personalError}
           accounts={accounts}
           customCategories={categories}
+          categoryRules={categoryRules}
           originalExpenses={expenses}
           submitLabel={id ? 'Save changes' : 'Save expense'}
         />

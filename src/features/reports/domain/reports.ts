@@ -1,6 +1,7 @@
 import type { Budget } from '@/features/budgets/data/schema';
 import type { StoredExpense } from '@/features/expenses/data/schema';
 import { consumption, filterEntries, safeSum } from '@/features/expenses/domain/ledger';
+import { computeBalances } from '@/features/expenses/domain/balances';
 import type { GroupWithDetails } from '@/features/groups/domain/group';
 import type { GroupCashMovement } from '@/features/group-cash/data/schema';
 import { groupCashOption, matchesCashTransaction } from '@/features/group-cash/domain/cash';
@@ -204,6 +205,7 @@ function groupBudgetSpending(
     for (const entry of relevant) {
       if (entry.currency !== group.currency)
         throw new Error('A group entry is not in its base currency');
+      computeBalances([entry]);
       const share = entry.split[memberId] ?? 0;
       if (!Number.isSafeInteger(share) || share < 0 || share > entry.amount)
         throw new Error('A group entry contains an invalid share');
@@ -268,11 +270,16 @@ export function budgetProgress(
   allBudgets: Budget[] = [],
   groupContext?: GroupBudgetContext,
 ) {
+  if (budget.basis && budget.basis !== 'personal' && budget.basis !== 'combined')
+    throw new Error('Invalid budget basis');
+  if (budget.basis === 'combined' && !groupContext)
+    throw new Error('Group data is required for a combined budget');
   const carryover = carryoverAmount(budget, entries, allBudgets, groupContext);
   const limit = safeSum([budget.amount, carryover]);
+  const entriesById = new Map(entries.map((entry) => [entry.id, entry]));
   const attributed = entries.map((entry) => {
     if (entry.entryType !== 'refund') return entry;
-    const original = entries.find((row) => row.id === entry.refundOfId);
+    const original = entry.refundOfId ? entriesById.get(entry.refundOfId) : undefined;
     return original
       ? {
           ...entry,
@@ -283,12 +290,8 @@ export function budgetProgress(
       : entry;
   });
   const groupData =
-    budget.basis === 'combined'
-      ? groupContext
-        ? groupBudgetSpending(budget, entries, groupContext)
-        : (() => {
-            throw new Error('Group data is required for a combined budget');
-          })()
+    budget.basis === 'combined' && groupContext
+      ? groupBudgetSpending(budget, entries, groupContext)
       : null;
   const rows = filterEntries(attributed, {
     month: budget.month,

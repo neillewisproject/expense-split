@@ -1,0 +1,1 @@
+ALTER TABLE `personal_settings` ADD `category_rules` text DEFAULT '[]' NOT NULL;

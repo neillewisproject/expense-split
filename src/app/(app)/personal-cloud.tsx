@@ -173,7 +173,7 @@ function PersonalCloudPanel({ userId, isConfigured }: { userId?: string; isConfi
                   const selected = cloud;
                   Alert.alert(
                     'Replace local personal records?',
-                    'Accounts, transactions, budgets, schedules, savings goals and group cash movements and matches will be replaced. Versions 1–3 contain no group cash movements; version 4 contains no matches; older budgets use personal-only spending. Group ledgers are untouched. Receipt images are not restored from cloud.',
+                    'Accounts, transactions, budgets, schedules, savings goals, category rules and group cash movements and matches will be replaced. Older backups contain no category rules. Versions 1–3 contain no group cash movements; version 4 contains no matches; older budgets use personal-only spending. Group ledgers are untouched. Receipt images are not restored from cloud.',
                     [
                       { text: 'Cancel', style: 'cancel' },
                       {

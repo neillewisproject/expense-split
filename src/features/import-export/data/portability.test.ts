@@ -161,3 +161,35 @@ it('round-trips an active personal transaction match', async () => {
     { personalEntryId: 'existing' },
   ]);
 });
+it('round-trips categorization rules with private settings', async () => {
+  const rules = [{ id: 'rule', contains: 'train', entryType: 'expense', category: 'transport' }];
+  mockRows[getTableName(personalSettings)]![0]!.categoryRules = JSON.stringify(rules);
+  const backup = await createBackup();
+  mockRows[getTableName(personalSettings)] = [];
+  await restoreBackup(backup);
+  expect(mockRows[getTableName(personalSettings)]).toMatchObject([
+    { categoryRules: JSON.stringify(rules) },
+  ]);
+});
+it('round-trips a combined budget without requiring the group ledger in the backup', async () => {
+  mockRows[getTableName(budgets)] = [
+    {
+      id: 'budget',
+      name: 'Group food',
+      month: '2026-03',
+      currency: 'INR',
+      amount: 10000,
+      category: null,
+      accountId: null,
+      tag: null,
+      threshold: 80,
+      carryoverFromId: null,
+      basis: 'combined',
+    },
+  ];
+  const backup = await createBackup();
+  mockRows[getTableName(budgets)] = [];
+  await restoreBackup(backup);
+  expect(mockRows[getTableName(budgets)]).toMatchObject([{ id: 'budget', basis: 'combined' }]);
+  expect(mockRows.groups).toEqual([{ id: 'trip' }]);
+});

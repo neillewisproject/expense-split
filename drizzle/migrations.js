@@ -11,6 +11,7 @@ import m0006 from './0006_minor_tyger_tiger.sql';
 import m0007 from './0007_small_the_executioner.sql';
 import m0008 from './0008_amused_white_queen.sql';
 import m0009 from './0009_shocking_omega_sentinel.sql';
+import m0010 from './0010_yielding_black_cat.sql';
 
 export default {
   journal,
@@ -25,5 +26,6 @@ export default {
     m0007,
     m0008,
     m0009,
+    m0010,
   },
 };

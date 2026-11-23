@@ -71,6 +71,13 @@
       "when": 1795419630386,
       "tag": "0009_shocking_omega_sentinel",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1795421102715,
+      "tag": "0010_yielding_black_cat",
+      "breakpoints": true
     }
   ]
 }

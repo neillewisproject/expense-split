@@ -24,6 +24,10 @@ import { useTheme } from '@/hooks/use-theme';
 import type { Account } from '@/features/accounts/data/schema';
 import type { StoredExpense } from '../data/schema';
 import { ReceiptPicker } from '@/features/receipts/components/receipt-picker';
+import {
+  suggestedCategoryRule,
+  type CategoryRule,
+} from '@/features/settings/domain/category-rules';
 
 type ExpenseFormProps = {
   initialValues: ExpenseFormValues;
@@ -34,6 +38,7 @@ type ExpenseFormProps = {
   accounts?: Account[];
   customCategories?: string[];
   originalExpenses?: StoredExpense[];
+  categoryRules?: CategoryRule[];
 };
 
 export function ExpenseForm({
@@ -45,6 +50,7 @@ export function ExpenseForm({
   accounts = [],
   customCategories = [],
   originalExpenses = [],
+  categoryRules = [],
 }: ExpenseFormProps) {
   const theme = useTheme();
   const [receiptUris, setReceiptUris] = useState(initialReceiptUris);
@@ -59,6 +65,13 @@ export function ExpenseForm({
   });
   const entryType = useWatch({ control, name: 'entryType' });
   const currency = useWatch({ control, name: 'currency' });
+  const description = useWatch({ control, name: 'description' });
+  const selectedCategory = useWatch({ control, name: 'category' });
+  const suggestion = suggestedCategoryRule(
+    categoryRules,
+    description ?? '',
+    entryType ?? 'expense',
+  );
 
   const inputStyle = [styles.input, { color: theme.text, borderColor: theme.backgroundSelected }];
 
@@ -232,6 +245,26 @@ export function ExpenseForm({
           />
         </View>
 
+        {suggestion ? (
+          <View style={styles.field}>
+            <ThemedText>
+              Description rule “{suggestion.contains}” suggests {categoryLabel(suggestion.category)}
+              . Applying a suggestion is optional and does not save the transaction.
+            </ThemedText>
+            <Pressable
+              accessibilityRole="button"
+              onPress={() =>
+                setValue('category', suggestion.category, {
+                  shouldDirty: true,
+                  shouldValidate: true,
+                })
+              }
+              style={styles.categoryButton}>
+              <ThemedText>Use suggested category: {categoryLabel(suggestion.category)}</ThemedText>
+            </Pressable>
+          </View>
+        ) : null}
+
         <View style={styles.field}>
           <ThemedText type="smallBold">Amount ({currency ?? 'INR'})</ThemedText>
           <Controller
@@ -267,8 +300,11 @@ export function ExpenseForm({
             render={({ field }) => (
               <View style={styles.categories}>
                 {[
-                  ...EXPENSE_CATEGORIES,
-                  ...customCategories.map((name) => `custom:${name}` as const),
+                  ...new Set([
+                    ...EXPENSE_CATEGORIES,
+                    ...customCategories.map((name) => `custom:${name}` as const),
+                    ...(selectedCategory ? [selectedCategory] : []),
+                  ]),
                 ].map((category) => {
                   const selected = field.value === category;
                   return (

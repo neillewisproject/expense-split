@@ -76,9 +76,10 @@ export function PortabilityScreen() {
     <PersonalPage title="Import, export and recovery">
       <ThemedText>
         CSV uses the exported column template, ISO dates, currency-aware decimal amounts, JSON tags,
-        and local account IDs. Import requires a valid preview. JSON v6 restores personal financial
-        records/settings, budget basis and carryover, savings goals, group cash snapshots and
-        transaction matches, and schedule time zones/end dates. Versions 1–5 are accepted; older
+        and local account IDs. Import requires a valid preview. JSON v7 restores personal financial
+        records/settings, category rules, budget basis and carryover, savings goals, group cash
+        snapshots and transaction matches, and schedule time zones/end dates. Versions 1–6 are
+        accepted; older backups have no category rules and replace existing rules with none. Older
         budgets use the personal-only basis. Versions 1–3 have no group cash movements, and version
         4 has no transaction matches. Restoring any backup replaces existing group cash movements,
         even when the backup contains none. Older schedules use the device time zone. Cash snapshots

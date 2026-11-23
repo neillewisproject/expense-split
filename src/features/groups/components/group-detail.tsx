@@ -1,6 +1,6 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, View } from 'react-native';
+import { Alert, Share, View } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 import { useAuth } from '@/features/auth/auth-provider';
 import { computeBalances, simplifyDebts } from '@/features/expenses/domain/balances';
@@ -12,7 +12,7 @@ import {
   type RemoteGroupSnapshot,
 } from '../data/cloud-sync';
 import { canEditExpense, canManageGroup } from '../domain/validation';
-import { groupReport } from '../domain/group-report';
+import { groupReport, groupSummary } from '../domain/group-report';
 import type { GroupMember, GroupWithDetails } from '../domain/group';
 import { useGroupsStore } from '../store';
 import { GroupButton, GroupError, GroupField, GroupPage } from './group-controls';
@@ -48,6 +48,7 @@ function Details({ group }: { group: GroupWithDetails }) {
   const [manage, setManage] = useState(false);
   const [history, setHistory] = useState(false);
   const [showReport, setShowReport] = useState(false);
+  const [showShare, setShowShare] = useState(false);
   const [remote, setRemote] = useState<RemoteGroupSnapshot | null>(null);
   const [access, setAccess] = useState<string[]>([]);
   const balances = useMemo(() => computeBalances(group.expenses), [group.expenses]);
@@ -59,6 +60,15 @@ function Details({ group }: { group: GroupWithDetails }) {
       return { data: null, error: cause instanceof Error ? cause.message : 'Group report failed' };
     }
   }, [group]);
+  const summary = useMemo(() => {
+    if (!showShare) return { text: null, error: null };
+    try {
+      return { text: groupSummary(group), error: null };
+    } catch (cause) {
+      return { text: null, error: cause instanceof Error ? cause.message : 'Group summary failed' };
+    }
+  }, [group, showShare]);
+  const shareText = summary.text;
   const owner = canManageGroup(group, userId);
   const frozen = !!group.archivedAt || group.syncStatus === 'conflict';
   const spending = group.expenses
@@ -239,6 +249,34 @@ function Details({ group }: { group: GroupWithDetails }) {
           </>
         ) : (
           <GroupError error={report.error} />
+        )
+      ) : null}
+      <GroupButton
+        label={showShare ? 'Hide shareable summary' : 'Review shareable summary'}
+        selected={showShare}
+        onPress={() => setShowShare(!showShare)}
+      />
+      {showShare ? (
+        shareText ? (
+          <>
+            <ThemedText>
+              This preview contains group and participant names, balances and suggested repayments.
+              Review it before choosing where to share. It excludes entry notes, receipts and invite
+              links.
+            </ThemedText>
+            <ThemedText>{shareText}</ThemedText>
+            <GroupButton
+              label="Open share sheet"
+              disabled={busy}
+              onPress={() =>
+                void run(async () => {
+                  await Share.share({ message: shareText });
+                })
+              }
+            />
+          </>
+        ) : (
+          <GroupError error={summary.error} />
         )
       ) : null}
       <ThemedText type="smallBold">Suggested repayments</ThemedText>

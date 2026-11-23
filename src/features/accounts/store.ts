@@ -23,6 +23,12 @@ import {
   withoutRecurringReceipts,
 } from '@/features/recurrence/domain/schedule';
 import { personalSettings } from '@/features/settings/data/schema';
+import {
+  changeCategoryRules,
+  parseCategoryRules,
+  type CategoryRule,
+  type CategoryRuleAction,
+} from '@/features/settings/domain/category-rules';
 import { prepareBulkChange, type BulkAction } from './domain/bulk';
 import { validateCarryover } from '@/features/reports/domain/reports';
 import { savingsGoals } from '@/features/goals/data/schema';
@@ -36,6 +42,7 @@ type PersonalState = {
   drafts: RecurringDraft[];
   defaultCurrency: string;
   categories: string[];
+  categoryRules: CategoryRule[];
   loaded: boolean;
   error: string | null;
   load: () => Promise<void>;
@@ -44,6 +51,7 @@ type PersonalState = {
   deleteBudget: (id: string) => Promise<void>;
   bulkChange: (ids: string[], action: BulkAction) => Promise<number>;
   saveSettings: (currency: string, categories: string[]) => Promise<void>;
+  changeCategoryRule: (action: CategoryRuleAction) => Promise<void>;
   addRule: (
     entry: ExpenseInput,
     frequency: RecurringRule['frequency'],
@@ -64,6 +72,7 @@ export const usePersonalStore = create<PersonalState>((set, get) => ({
   drafts: [],
   defaultCurrency: 'INR',
   categories: [],
+  categoryRules: [],
   loaded: false,
   error: null,
   load: async () => {
@@ -84,6 +93,7 @@ export const usePersonalStore = create<PersonalState>((set, get) => ({
         drafts: draftRows,
         defaultCurrency: settings?.defaultCurrency ?? 'INR',
         categories: JSON.parse(settings?.categories ?? '[]') as string[],
+        categoryRules: parseCategoryRules(settings?.categoryRules ?? '[]'),
         loaded: true,
         error: null,
       });
@@ -207,6 +217,25 @@ export const usePersonalStore = create<PersonalState>((set, get) => ({
         .onConflictDoUpdate({
           target: personalSettings.id,
           set: { defaultCurrency: currency, categories: JSON.stringify(cleaned) },
+        });
+      await get().load();
+    }),
+  changeCategoryRule: (action) =>
+    personalMutation(async () => {
+      const db = await getExpenseDatabase();
+      const rows = await db.select().from(personalSettings);
+      const current = rows.find((row) => row.id === 'personal');
+      const rules = changeCategoryRules(
+        parseCategoryRules(current?.categoryRules ?? '[]'),
+        action,
+        randomUUID(),
+      );
+      await db
+        .insert(personalSettings)
+        .values({ id: 'personal', categoryRules: JSON.stringify(rules) })
+        .onConflictDoUpdate({
+          target: personalSettings.id,
+          set: { categoryRules: JSON.stringify(rules) },
         });
       await get().load();
     }),

@@ -61,7 +61,33 @@ try {
     insert into personal_budgets(id,name,month,currency,amount,threshold)
       values('old-budget','Food','2026-03','INR',5000,80);
   `);
-  journal.entries.slice(9).forEach(migrate);
+  journal.entries.slice(9, 10).forEach(migrate);
+  db.exec(`insert into personal_settings(id,default_currency,categories)
+    values('personal','INR','["Travel"]');`);
+  journal.entries.slice(10).forEach(migrate);
+  assert.deepEqual(
+    {
+      ...db
+        .prepare(
+          "select default_currency,categories,category_rules from personal_settings where id='personal'",
+        )
+        .get(),
+    },
+    { default_currency: 'INR', categories: '["Travel"]', category_rules: '[]' },
+  );
+  const categoryRules = [
+    { id: 'rule', contains: 'train', entryType: 'expense', category: 'transport' },
+  ];
+  db.prepare("update personal_settings set category_rules=? where id='personal'").run(
+    JSON.stringify(categoryRules),
+  );
+  assert.deepEqual(
+    JSON.parse(
+      db.prepare("select category_rules from personal_settings where id='personal'").get()
+        .category_rules,
+    ),
+    categoryRules,
+  );
   assert.equal(
     db.prepare("select basis from personal_budgets where id='old-budget'").get().basis,
     'personal',

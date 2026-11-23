@@ -228,6 +228,19 @@ it('combines attributed group shares with personal consumption without recountin
     }),
   ).toThrow('changed');
   expect(() =>
+    budgetProgress(budget, [payment], [], {
+      ...context,
+      movements: [movement, { ...movement, id: 'duplicate' }],
+    }),
+  ).toThrow('duplicated');
+  expect(() =>
+    budgetProgress(budget, [], [], {
+      groups: [{ ...group, expenses: [{ ...groupEntry, split: { me: 300 } }] }],
+      movements: [],
+      userId: null,
+    }),
+  ).toThrow('allocations');
+  expect(() =>
     budgetProgress(budget, [], [], {
       groups: [{ ...group, meMemberId: null }],
       movements: [],

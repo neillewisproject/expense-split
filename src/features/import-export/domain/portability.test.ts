@@ -17,7 +17,7 @@ const entry: StoredExpense = {
 function backup() {
   return {
     format: 'expense-split-personal',
-    version: 6,
+    version: 7,
     exportedAt: timestamp,
     omittedReceiptCount: 0,
     accounts: [],
@@ -28,7 +28,7 @@ function backup() {
     goals: [],
     contributions: [],
     cashMovements: [],
-    settings: { defaultCurrency: 'INR', categories: ['Travel'] },
+    settings: { defaultCurrency: 'INR', categories: ['Travel'], categoryRules: [] },
   };
 }
 it('round-trips quoted CSV, multiline notes, tags, IDs and minor-unit precision', () => {
@@ -44,6 +44,27 @@ it('round-trips quoted CSV, multiline notes, tags, IDs and minor-unit precision'
     portableEntry({ ...entry, id: 'jpy', currency: 'JPY', amount: 123 }),
     portableEntry({ ...entry, id: 'kwd', currency: 'KWD', amount: 1234 }),
   ]);
+});
+it('preserves category rules and upgrades older settings without inventing rules', () => {
+  const rule = { id: 'rule', contains: 'train', entryType: 'expense', category: 'transport' };
+  const current = { ...backup(), settings: { ...backup().settings, categoryRules: [rule] } };
+  expect(previewBackup(JSON.stringify(current)).settings.categoryRules).toEqual([rule]);
+  const { categoryRules: _rules, ...oldSettings } = current.settings;
+  expect(
+    previewBackup(JSON.stringify({ ...current, version: 6, settings: oldSettings })).settings
+      .categoryRules,
+  ).toEqual([]);
+  expect(() => previewBackup(JSON.stringify({ ...current, settings: oldSettings }))).toThrow(
+    'category rules',
+  );
+  expect(() =>
+    previewBackup(
+      JSON.stringify({
+        ...current,
+        settings: { ...current.settings, categoryRules: [rule, { ...rule, id: 'duplicate' }] },
+      }),
+    ),
+  ).toThrow('distinct');
 });
 it('skips exact ID duplicates but blocks different data using the same ID', () => {
   expect(previewCsv(exportCsv([entry]), [], [entry])).toMatchObject({
@@ -98,7 +119,7 @@ it('round-trips versioned personal financial data without importing auth tokens 
       }),
     ),
   ).toThrow('Invalid backup');
-  expect(() => previewBackup(JSON.stringify({ ...value, version: 7 }))).toThrow('Invalid backup');
+  expect(() => previewBackup(JSON.stringify({ ...value, version: 8 }))).toThrow('Invalid backup');
 });
 it('upgrades old financial backups and validates new savings relationships', () => {
   const { goals: _goals, contributions: _contributions, ...old } = backup();

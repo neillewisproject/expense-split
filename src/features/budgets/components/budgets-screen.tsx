@@ -99,6 +99,16 @@ export function BudgetsScreen() {
         filters.
       </ThemedText>
       <Failure message={error ?? storeError} />
+      <Action
+        label="Refresh budget data"
+        disabled={busy}
+        onPress={() => {
+          void load();
+          void loadEntries();
+          void loadGroups(userId ?? undefined);
+          void loadCash();
+        }}
+      />
       {budgets.map((budget) => {
         let summary: string;
         try {

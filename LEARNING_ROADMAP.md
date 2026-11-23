@@ -213,9 +213,9 @@ Multiple currencies with exchange rates · recurring expenses · CSV export (`ex
 ## Functionality expansion
 
 The prototype now includes a richer personal ledger, accounts, budgets, recurring approval drafts,
-CSV/JSON recovery, savings reservations, budget carryover, multiple receipt photos, advanced
+CSV/JSON recovery, explicit description-category suggestions, savings reservations, budget carryover, multiple receipt photos, advanced
 splits/multiple payers/itemized bills, fixed group exchange rates, linked refunds, partial settlements,
-group spending/settlement breakdowns, explicit account-linked group cash snapshots, zoned recurring schedules with optional end dates and
+group spending/settlement breakdowns and shareable previews, explicit account-linked group cash snapshots, zoned recurring schedules with optional end dates and
 unposted-commitment reporting, audited edits, a durable revision-checked operation queue, and
 ownership/invitation/access controls.
 

@@ -8,6 +8,7 @@ import { dateInTimeZone, nextOccurrence } from '@/features/recurrence/domain/sch
 import { goalSaved, validateGoal } from '@/features/goals/domain/goals';
 import { budgetProgress, validateCarryover } from '@/features/reports/domain/reports';
 import { matchesCashTransaction } from '@/features/group-cash/domain/cash';
+import { categoryRulesSchema } from '@/features/settings/domain/category-rules';
 
 const safeInteger = z.number().refine(Number.isSafeInteger, 'Use safe integer minor units');
 const currency = z
@@ -161,6 +162,7 @@ export const backupSchema = z
       z.literal(4),
       z.literal(5),
       z.literal(6),
+      z.literal(7),
     ]),
     exportedAt: timestamp,
     omittedReceiptCount: z.number().int().nonnegative(),
@@ -176,6 +178,7 @@ export const backupSchema = z
       .object({
         defaultCurrency: currency,
         categories: z.array(z.string().trim().min(1).max(40)).max(50),
+        categoryRules: categoryRulesSchema.optional(),
       })
       .strict(),
   })
@@ -214,10 +217,14 @@ export const backupSchema = z
     if (value.version >= 6 && value.budgets.some((budget) => budget.basis === undefined)) {
       context.addIssue({ code: 'custom', message: 'Version 6 budgets require a basis' });
     }
+    if (value.version >= 7 && value.settings.categoryRules === undefined) {
+      context.addIssue({ code: 'custom', message: 'Version 7 settings require category rules' });
+    }
   })
   .transform((value) => ({
     ...value,
-    version: 6 as const,
+    version: 7 as const,
+    settings: { ...value.settings, categoryRules: value.settings.categoryRules ?? [] },
     budgets: value.budgets.map((budget) => ({
       ...budget,
       carryoverFromId: budget.carryoverFromId ?? null,
