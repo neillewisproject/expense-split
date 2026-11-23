@@ -32,7 +32,8 @@ const TABS: { name: string; href: Href; label: string; icon: IconName }[] = [
 export default function AppTabs() {
   const theme = useTheme();
   return (
-    <Tabs style={{ backgroundColor: theme.background }}>
+    // `Tabs` replaces (not merges) its default `flex: 1` when given a style, so restate it.
+    <Tabs style={[styles.root, { backgroundColor: theme.background }]}>
       <TabSlot />
       <TabList asChild>
         <TabBar>
@@ -114,6 +115,7 @@ function useAndroidKeyboardOpen() {
 }
 
 const styles = StyleSheet.create({
+  root: { flex: 1 },
   container: {
     paddingHorizontal: ScreenPadding,
     paddingTop: Spacing.two,
